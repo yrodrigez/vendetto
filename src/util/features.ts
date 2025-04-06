@@ -34,6 +34,13 @@ const getAllFeatures = function () {
                 'Sync guild members with the bot',
             name:
                 Symbol('syncGuildMembers')
+        },
+        raidInvitesNotifications: {
+            enabled: true,
+            description:
+                'Receive notifications for raid invites',
+            name:
+                Symbol('raidInvitesNotifications')
         }
     } as { [key: string]: Feature };
 }
@@ -69,10 +76,11 @@ const getEnabledFeatures = (guildId: string) => {
             features.raidNotifications.enabled = true;
             features.announceConnection.enabled = false;
             features.syncGuildMembers.enabled = true;
+            features.raidInvitesNotifications.enabled = true;
             break;
         case 'dev':
             features.raidNotifications.enabled = false;
-            features.announceConnection.enabled = false;
+            features.raidInvitesNotifications.enabled = false;
             break;
     }
 
