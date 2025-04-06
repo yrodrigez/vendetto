@@ -2,10 +2,11 @@
 import {type Client} from "discord.js";
 
 const schedule: {
-    execute: (channels: any, client: Client) => {}
+    execute: (client: Client) => {}
     type: 'daily' | 'weekly' | 'monthly' | 'once' | 'minutely' | 'hourly'
     time: string
     name: string
+    startNow?: boolean
     description?: string
     timezone?: string
 }[] = []
@@ -15,13 +16,19 @@ export function addScheduledEvent(event: {
     type: 'daily' | 'weekly' | 'monthly' | 'once' | 'minutely' | 'hourly'
     time: string
     name: string
+    startNow?: boolean
     description?: string
     timezone?: string
 }) {
     schedule.push(event)
 }
 
-export function setupScheduledEvents(channels: any, client: Client) {
+export function setupScheduledEvents(client: Client) {
+
+    schedule.filter((event) => event.startNow).forEach((event) => {
+        event.execute(client)
+    })
+
     setInterval(() => {
         const now = new Date();
         const day = now.getDay(); // 0 is Sunday
@@ -37,17 +44,17 @@ export function setupScheduledEvents(channels: any, client: Client) {
             const eventMonth = eventDate.getMonth(); // 0 is January
 
             if (event.type === 'daily' && hour === eventHour && minute === eventMinute) {
-                event.execute(channels, client)
+                event.execute(client)
             } else if (event.type === 'weekly' && day === eventDay && hour === eventHour && minute === eventMinute) {
-                event.execute(channels, client)
+                event.execute(client)
             } else if (event.type === 'monthly' && day === eventDay && hour === eventHour && minute === eventMinute && month === eventMonth) {
-                event.execute(channels, client)
+                event.execute(client)
             } else if (event.type === 'once' && day === eventDay && hour === eventHour && minute === eventMinute) {
-                event.execute(channels, client)
+                event.execute(client)
             } else if (event.type === 'minutely') {
-                event.execute(channels, client)
+                event.execute(client)
             } else if (event.type === 'hourly' && hour === eventHour && minute === eventMinute) {
-                event.execute(channels, client)
+                event.execute(client)
             }
         });
 
