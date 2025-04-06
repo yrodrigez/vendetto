@@ -73,7 +73,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     for (const participant of participants) {
         try {
             if (participant.id) {
-                await sendInviteMessage(interaction.client, participant.id, participant.name, participant.raidName);
+                await sendInviteMessage(interaction.client, participant.id, participant.name, participant.raidName, resetId);
                 results.successful.push(participant.name || "Unknown");
             } else {
                 results.failed.push(participant.name || "Unknown");
@@ -138,12 +138,11 @@ async function findParticipants(resetId: string) {
     }));
 }
 
-async function sendInviteMessage(client: Client, userId: string, name: string, raidName: string): Promise<void> {
+async function sendInviteMessage(client: Client, userId: string, name: string, raidName: string, raidId: string): Promise<void> {
     try {
-
         const user = await client.users.fetch(userId);
         await user.send({
-            content: `🔔 Splish Splash! Invites Started! 🔔\n\nHey ${name}, it's me, Vendetto, your favorite eight-armed friend! 🐙\n\nInvites for ${raidName} have just begun—time to dive in!\n\nLog in quick, I'm juggling invites with all my arms waiting for you! 🌊✨`
+            content: `🔔 Splish Splash! Invites Started! 🔔\n\nHey ${name}, it's me, Vendetto, your favorite eight-armed friend! 🐙\n\nInvites for ${raidName} have just begun—time to dive in!\n\nLog in quick, I'm juggling invites with all my arms waiting for you! 🌊✨\n\nQuick reminder: Don't forget to review your Soft Reserves (SRs) here 👉 [Review SRs](https://www.everlastingvendetta.com/raid/${raidId}/soft-reserv)`
         });
     } catch (error) {
         // Re-throw the error to be caught by the calling function
