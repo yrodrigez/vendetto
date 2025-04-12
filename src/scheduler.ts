@@ -11,7 +11,7 @@ const schedule: {
     timezone?: string
 }[] = []
 
-export function addScheduledEvent(event: {
+export function addWorkflow(event: {
     execute: () => {}
     type: 'daily' | 'weekly' | 'monthly' | 'once' | 'minutely' | 'hourly'
     time: string
@@ -23,7 +23,7 @@ export function addScheduledEvent(event: {
     schedule.push(event)
 }
 
-export function setupScheduledEvents(client: Client) {
+export function setupWorkflows(client: Client) {
 
     schedule.filter((event) => event.startNow).forEach((event) => {
         event.execute(client)

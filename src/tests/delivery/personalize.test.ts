@@ -18,7 +18,7 @@ describe('personalize', () => {
             personalize({
                 memberData: null as any,
                 targetData: {},
-                message: {content: 'Hello!'},
+                message: {content: 'Hello!', targetMapping: {targetName: 'user'}},
                 targetMapping: {targetName: 'user'}
             });
         }).toThrow('Invalid member data');
@@ -29,7 +29,7 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: null as any,
-                message: {content: 'Hello!'},
+                message: {content: 'Hello!', targetMapping: {targetName: 'user'}},
                 targetMapping: {targetName: 'user'}
             });
         }).toThrow('Invalid target data');
@@ -40,21 +40,21 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: {},
-                message: {content: 'Hello!'},
+                message: {content: 'Hello!', targetMapping: {targetName: 'user'}},
                 targetMapping: {targetName: ''}
             });
         }).toThrow('Invalid target mapping');
     });
 
-    test('returns message when no content provided', () => {
-        const result = personalize({
-            memberData: {},
-            targetData: {},
-            message: {} as any,
-            targetMapping: {targetName: 'user'}
-        });
-
-        expect(result).toEqual({content: 'No message content provided'});
+    test('throws error for invalid message content', () => {
+        expect(() => {
+            personalize({
+                memberData: {},
+                targetData: {},
+                message: {content: null as any, targetMapping: {targetName: 'user'}},
+                targetMapping: {targetName: 'user'}
+            });
+        }).toThrow('Invalid message content');
     });
 
     test('correctly renders template with section tags', () => {
@@ -63,11 +63,11 @@ describe('personalize', () => {
         const result = personalize({
             memberData: {name: 'John'},
             targetData: {},
-            message: {content: 'Hello {{#user}}{{name}}{{/user}}!'},
+            message: {content: 'Hello {{#user}}{{name}}{{/user}}!', targetMapping: {targetName: 'user'}},
             targetMapping: {targetName: 'user'}
         });
 
-        expect(result).toEqual({content: 'Hello John!'});
+        expect(result).toEqual({content: 'Hello John!', targetMapping: {targetName: 'user'}});
         expect(Mustache.render).toHaveBeenCalledWith(
             'Hello {{#user}}{{name}}{{/user}}!',
             {
@@ -83,11 +83,11 @@ describe('personalize', () => {
         const result = personalize({
             memberData: {name: 'John'},
             targetData: {},
-            message: {content: 'Hello {{{user.name}}}!'},
+            message: {content: 'Hello {{{user.name}}}!', targetMapping: {targetName: 'user'}},
             targetMapping: {targetName: 'user'}
         });
 
-        expect(result).toEqual({content: 'Hello John!'});
+        expect(result).toEqual({content: 'Hello John!', targetMapping: {targetName: 'user'}});
         expect(Mustache.render).toHaveBeenCalledWith(
             'Hello {{{user.name}}}!',
             {
@@ -104,7 +104,7 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: {},
-                message: {content: 'Long message'},
+                message: {content: 'Long message', targetMapping: {targetName: 'user'}},
                 targetMapping: {targetName: 'user'}
             });
         }).toThrow("Message content exceeds Discord's maximum character limit");
@@ -117,11 +117,11 @@ describe('personalize', () => {
         const result = personalize({
             memberData: {name: 'John'},
             targetData: {partyName: 'Birthday Party'},
-            message: {content: template},
+            message: {content: template, targetMapping: {targetName: 'user'}},
             targetMapping: {targetName: 'user'}
         });
 
-        expect(result).toEqual({content: 'Hello John, you are invited to Birthday Party'});
+        expect(result).toEqual({content: 'Hello John, you are invited to Birthday Party', targetMapping:{targetName: 'user'}});
         expect(Mustache.render).toHaveBeenCalledWith(
             template,
             {
@@ -140,7 +140,7 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: {},
-                message: {content: 'Invalid {{template'},
+                message: {content: 'Invalid {{template', targetMapping: {targetName: 'user'}},
                 targetMapping: {targetName: 'user'}
             });
         }).toThrow('Template rendering failed: Mustache error');

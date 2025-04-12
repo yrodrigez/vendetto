@@ -2,7 +2,7 @@ import {Client, Collection, GatewayIntentBits,} from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import {config} from './config';
-import {addScheduledEvent, setupScheduledEvents} from "./scheduler";
+import {addWorkflow, setupWorkflows} from "./scheduler";
 import {deployCommands} from "./util/deployCommands";
 
 declare module 'discord.js' {
@@ -33,19 +33,25 @@ fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts') || file.endsWit
 const eventsPath = path.join(__dirname, 'events');
 for (const file of fs.readdirSync(eventsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'))) {
     const event = require(path.join(eventsPath, file));
-    if (event.scheduler) {
-        addScheduledEvent({
-            name: event.name,
-            execute: event.execute,
-            ...event.scheduler
-        });
-    }
     if (event.once) {
         console.log('Loading event:', event.name);
         client.once(event.name, (...args) => event.execute(...args));
     } else {
         console.log('Loading event:', event.name);
         client.on(event.name, (...args) => event.execute(...args));
+    }
+}
+
+
+const workflowsPath = path.join(__dirname, 'workflows');
+for (const file of fs.readdirSync(workflowsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'))) {
+    const workflow = require(path.join(workflowsPath, file));
+    if (workflow.scheduler) {
+        addWorkflow({
+            name: workflow.name,
+            execute: workflow.execute,
+            ...workflow.scheduler
+        });
     }
 }
 
@@ -56,7 +62,7 @@ client.on('error', error => {
 client.login(config.token)
     .then(() => {
         console.log('Discord client logged in');
-        setupScheduledEvents(client);
+        setupWorkflows(client);
         deployCommands(
             config.token,
             config.clientId,
