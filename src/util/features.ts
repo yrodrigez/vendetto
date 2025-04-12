@@ -41,6 +41,13 @@ const getAllFeatures = function () {
                 'Receive notifications for raid invites',
             name:
                 Symbol('raidInvitesNotifications')
+        },
+        campaigns:{
+            enabled: true,
+            description:
+                'Campaigns',
+            name:
+                Symbol('campaigns')
         }
     } as { [key: string]: Feature };
 }
@@ -81,6 +88,8 @@ const getEnabledFeatures = (guildId: string) => {
         case 'dev':
             features.raidNotifications.enabled = false;
             features.raidInvitesNotifications.enabled = false;
+            features.announceConnection.enabled = false;
+            features.campaigns.enabled = false;
             break;
     }
 

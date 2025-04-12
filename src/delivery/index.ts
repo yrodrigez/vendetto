@@ -2,14 +2,14 @@ import {Client, User} from "discord.js";
 import {deduplicateTarget} from "./deduplicateTarget";
 import {personalize} from "./personalize";
 import {optimizeTextContent} from "./optimizeTextContent";
-import {createServerComponentClient} from "../supabase";
 import {saveBroadlog} from "./saveBroadlog";
 
 export type Message = {
     content: string
     seedList?: string[]
     embeds?: any[]
-    targetMapping: TargetMapping
+    targetMapping: TargetMapping,
+    communicationCode?: string
 }
 
 export type TargetMapping = {
@@ -74,7 +74,7 @@ export async function createDelivery({
             }
         }))).filter((message) => message !== null)
     const personalizationEnd = Date.now()
-    console.log('Personalization finished on: ', personalizationEnd - start, 'ms')
+    console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages)
 
     async function send() {
         const results = {
@@ -108,7 +108,8 @@ export async function createDelivery({
                     text: personalized?.message?.content ?? '',
                     to: userId,
                     last_event: 'success' as 'success',
-                    channel: 'discord' as 'discord'
+                    channel: 'discord' as 'discord',
+                    communication_code: personalized?.message?.communicationCode ?? '',
                 }
             })),
             ...results.failed.map((userId => {
