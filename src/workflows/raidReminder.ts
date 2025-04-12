@@ -99,7 +99,6 @@ export async function execute(client: Client) {
             identifier: 'discordId',
         },
         message: {
-            seedList: [(await client.users.fetch('600220534885711893'))],
             communicationCode: already_notified_code,
             targetMapping: {targetName: 'user'},
             content: `
@@ -112,7 +111,7 @@ export async function execute(client: Client) {
             - 💥 This time only: confirm now and you’ll receive an extra Soft Reserve. That’s right—free loot potential just for clicking a button.
             - ⚔️ Time’s ticking. The raid isn’t going to wait for the indecisive. Sign up now, or forever explain to your gear why it’s still blue.
             - 📅 Check the calendar, pick your spot, and let’s bring the pain (and maybe some cookies).
-            - 🔗 [Sign up here](<https://wwww.everlastingvendetta.com/raids/{{{targetData.raidId}}}>)
+            - 🔗 [Sign up here](<https://www.everlastingvendetta.com/raids/{{{targetData.raidId}}}>)
             
             🐙 With an ominous tentacle wiggle,
             Vendetto, your emotionally unstable raid octopus
