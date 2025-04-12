@@ -2,16 +2,16 @@ import {type Message, type TargetMapping} from "./index";
 import Mustache from "mustache";
 
 export function personalize({
-    memberData,
-    targetData,
-    message,
-    targetMapping,
-}: {
+                                memberData,
+                                targetData,
+                                message,
+                                targetMapping,
+                            }: {
     memberData: Record<string, any>,
-    targetData: Record<string, any>,
+    targetData: Record<string, any> | Array<Record<string, any>>,
     message: Message,
     targetMapping: TargetMapping
-}) :Message {
+}): Message {
     // Input validation
     if (!memberData || typeof memberData !== 'object') {
         throw new Error("Invalid member data");
@@ -29,13 +29,13 @@ export function personalize({
         throw new Error('Invalid message content');
     }
 
-    if( message.targetMapping.targetName !== targetMapping.targetName) {
+    if (message.targetMapping.targetName !== targetMapping.targetName) {
         throw new Error('Target mapping mismatch');
     }
 
     // Prepare data for template rendering
     const combinedData = {
-        targetData,
+        targetData: (Array.isArray(targetData) && targetMapping.identifier) ? targetData.find(x => x[targetMapping.identifier ?? 'discordId'] === memberData.id) : targetData,
         [targetMapping.targetName]: memberData
     };
 

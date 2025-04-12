@@ -3,10 +3,13 @@ import {deduplicateTarget} from "./deduplicateTarget";
 import {personalize} from "./personalize";
 import {optimizeTextContent} from "./optimizeTextContent";
 import {saveBroadlog} from "./saveBroadlog";
+import RateLimitedThreadPool from "../util/thread-pool";
+
+const threadPool = new RateLimitedThreadPool(5, 5000);
 
 export type Message = {
     content: string
-    seedList?: string[]
+    seedList?: User[]
     embeds?: any[]
     targetMapping: TargetMapping,
     communicationCode?: string
@@ -14,6 +17,7 @@ export type Message = {
 
 export type TargetMapping = {
     targetName: string
+    identifier?: string
 }
 
 export type DeliveryParams = {
@@ -21,7 +25,7 @@ export type DeliveryParams = {
     target: { discordId: string }[]
     targetData: any
     message: Message
-    targetMapping: TargetMapping
+    targetMapping: TargetMapping,
 }
 
 export async function createDelivery({
@@ -47,7 +51,7 @@ export async function createDelivery({
     const start = Date.now()
     console.log('Personalization started')
     const personalizedMessages = (await Promise.all(deduplicateTarget(target)
-        .map(async ({discordId}) => {
+        .map(async ({discordId}) => threadPool.submit(async () => {
             const user = await (async () => {
                 try {
                     return await client.users.fetch(discordId)
@@ -72,7 +76,7 @@ export async function createDelivery({
                 user: user,
                 message: personalized
             }
-        }))).filter((message) => message !== null)
+        })))).filter((message) => message !== null)
     const personalizationEnd = Date.now()
     console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages)
 
@@ -83,7 +87,21 @@ export async function createDelivery({
         };
         const start = Date.now()
         console.log('Sending started')
-        await Promise.all(personalizedMessages.map(async ({user, message}: { user: User, message: Message }) => {
+        if (message.seedList?.length) {
+            message.seedList.forEach(seed => {
+                const randomMessage = personalizedMessages[Math.floor(Math.random() * personalizedMessages.length)]
+                if (randomMessage) {
+                    personalizedMessages.push({
+                        user: seed,
+                        message: `You are part of a seed list:\n${randomMessage.message}`
+                    })
+                }
+            })
+        }
+        await Promise.all(personalizedMessages.map(async ({user, message}: {
+            user: User,
+            message: Message
+        }) => threadPool.submit(async () => {
             const {content, embeds} = message
             try {
                 await user.send({
@@ -95,7 +113,7 @@ export async function createDelivery({
                 console.error('Error sending message: ', e)
                 results.failed.push(user.id)
             }
-        }))
+        })))
         const sendEnd = Date.now()
         console.log('Sending finished on: ', sendEnd - start, 'ms')
         console.log('Results: ', results)

@@ -1,6 +1,5 @@
 import {type Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
-import {hasFeature} from "../util/features";
 import {createDelivery} from "../delivery";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
@@ -12,11 +11,6 @@ export const scheduler: { type: string; time: string, startNow: boolean } = {
 export const name = 'Been a Long Time';
 
 export async function execute(client: Client) {
-    await client.guilds.fetch();
-    const guilds = client.guilds.cache.filter(guild => {
-        return hasFeature("campaigns", guild.id);
-    });
-
     const communicationCode = 'beenLongTime'
     const timeInterval = '3 weeks'
     const query = `
@@ -59,15 +53,16 @@ export async function execute(client: Client) {
         db.query(query, [communicationCode, timeInterval]).then(r => r.rows)
     );
 
-
     if (error) {
         console.error('Error fetching members:', error);
         return;
     }
+
     if (!data?.length) {
         console.log('No members to notify for campaign', communicationCode);
         return;
     }
+
     console.log('Members to notify:', data);
 
     const delivery = await createDelivery({
@@ -113,5 +108,4 @@ export async function execute(client: Client) {
 
     console.log('Delivery successful:', successful.length);
     console.log('Delivery failed:', failed.length);
-
 }
