@@ -5,7 +5,7 @@ import {createDelivery} from "../delivery";
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
     time: '2025-04-05T17:30:00Z',
-    startNow: true,
+    startNow: false,
 }
 
 export const name = 'Been a Long Time';

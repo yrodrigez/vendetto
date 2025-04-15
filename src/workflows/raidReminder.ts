@@ -1,6 +1,7 @@
 import {type Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
+import moment from "moment";
 
 export const scheduler = {
     type: 'daily',
@@ -12,7 +13,7 @@ export const name = 'Campaign: Raid Reminder'
 
 export async function execute(client: Client) {
 
-    const recent_active_members = '4 weeks'
+    const recent_active_members = '1.5 month'
     const already_notified_delay = '2 day'
     const already_notified_code = 'raidReminder'
     const timezone = 'Europe/Madrid'
@@ -22,14 +23,15 @@ export async function execute(client: Client) {
                                        WHERE created_at >= NOW() - $1::interval)
            , next_upcoming_raid AS (SELECT id, name, raid_date, time
                                     FROM public.raid_resets
-                                    WHERE (raid_date::text || ' ' || time ::text):: timestamp > NOW()
+                                    WHERE (raid_date::text || ' ' || time ::text):: timestamp > NOW() + '1 day'::interval
                                     AND (raid_date::text || ' ' || time ::text):: timestamp < NOW() + '1 week'::interval
                                     ORDER BY (raid_date::text || ' ' || time ::text):: timestamp
                                     LIMIT 1)
            , next_raid_signups AS (SELECT DISTINCT member_id
                                    FROM public.ev_raid_participant
                                    WHERE raid_id = (SELECT id FROM next_upcoming_raid)
-                                     and details ->> 'status' != 'declined')
+                                     --and details ->> 'status' != 'declined'
+                                   )
            , accounts_with_signups AS (SELECT DISTINCT m.wow_account_id
                                        FROM public.ev_member m
                                                 JOIN next_raid_signups nrs
@@ -83,7 +85,9 @@ export async function execute(client: Client) {
     const targetData = data.map(p => ({
         discordId: p.discord_id,
         raidName: p.raid_name,
-        raidDate: p.raid_date,
+        raidDate: moment(p.raid_date).format(
+            'dddd, Do [at] h:mm A'
+        ),
         accountId: p.account_id,
         memberId: p.discord_id,
         raidId: p.raid_id,
@@ -99,12 +103,13 @@ export async function execute(client: Client) {
             identifier: 'discordId',
         },
         message: {
+            seedList: ['600220534885711893'],
             communicationCode: already_notified_code,
             targetMapping: {targetName: 'user'},
             content: `
             🐙 Urgent Call from Vendetto! 🐙
 
-            Hey {{{targetData.characterName}}}, the next **{{{targetData.raidName}}}** is almost upon us, and you still haven’t signed up!. You okay? Blink twice if you’re trapped in Stranglethorn again. 🧟
+            Hey {{{targetData.characterName}}}, the next **{{{targetData.raidName}}}** is almost upon us ({{{targetData.raidDate}}}), and you still haven’t signed up!. You okay? Blink twice if you’re trapped in Stranglethorn again. 🧟
             
             But seriously—don’t leave us guessing like a pug tank pulling without buffs. We need your strength, your spark, and your beautiful brain 🧠.
             
@@ -118,7 +123,6 @@ export async function execute(client: Client) {
             `
         }
     })
-
     const {successful, failed} = await delivery.send();
 
     console.log('Delivery successful:', successful.length);

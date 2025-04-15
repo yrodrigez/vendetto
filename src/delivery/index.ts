@@ -9,7 +9,7 @@ const threadPool = new RateLimitedThreadPool(5, 5000);
 
 export type Message = {
     content: string
-    seedList?: User[]
+    seedList?: User[] | string[]
     embeds?: any[]
     targetMapping: TargetMapping,
     communicationCode?: string
@@ -26,6 +26,15 @@ export type DeliveryParams = {
     targetData: any
     message: Message
     targetMapping: TargetMapping,
+}
+
+async function getDiscordUserById(client: Client, discordId: string) {
+    try {
+        return await client.users.fetch(discordId)
+    } catch (e) {
+        console.error('Error fetching user: ', e)
+        return null
+    }
 }
 
 export async function createDelivery({
@@ -52,14 +61,7 @@ export async function createDelivery({
     console.log('Personalization started')
     const personalizedMessages = (await Promise.all(deduplicateTarget(target)
         .map(async ({discordId}) => threadPool.submit(async () => {
-            const user = await (async () => {
-                try {
-                    return await client.users.fetch(discordId)
-                } catch (e) {
-                    console.error('Error fetching user: ', e)
-                    return null
-                }
-            })();
+            const user = await getDiscordUserById(client, discordId);
 
             if (!user) {
                 return null
@@ -78,25 +80,43 @@ export async function createDelivery({
             }
         })))).filter((message) => message !== null)
     const personalizationEnd = Date.now()
-    console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages)
+    console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages[0], 'total: ', personalizedMessages.length)
 
-    async function send() {
+    async function send({removeDelay}: { removeDelay?: boolean } = {}) {
         const results = {
             successful: [] as string[],
             failed: [] as string[]
         };
+
+        if (!personalizedMessages.length) {
+            console.log('No personalized messages to send')
+            return results
+        }
+        console.log('SENDING MESSAGES IN 5 SECONDS')
+        if (!removeDelay) {
+            await new Promise(resolve => setTimeout(resolve, 5000))
+        }
         const start = Date.now()
         console.log('Sending started')
         if (message.seedList?.length) {
-            message.seedList.forEach(seed => {
+            await Promise.all(message.seedList.map(async seed => {
+                let user = null
+                if (typeof seed === 'string') {
+                    user = await getDiscordUserById(client, seed)
+                } else {
+                    user = seed
+                }
+                if (!user) {
+                    return null
+                }
                 const randomMessage = personalizedMessages[Math.floor(Math.random() * personalizedMessages.length)]
                 if (randomMessage) {
                     personalizedMessages.push({
-                        user: seed,
-                        message: `You are part of a seed list:\n${randomMessage.message}`
+                        user,
+                        message: {content: `You are part of a seed list:\n${randomMessage.message.content}`}
                     })
                 }
-            })
+            }))
         }
         await Promise.all(personalizedMessages.map(async ({user, message}: {
             user: User,
@@ -116,7 +136,7 @@ export async function createDelivery({
         })))
         const sendEnd = Date.now()
         console.log('Sending finished on: ', sendEnd - start, 'ms')
-        console.log('Results: ', results)
+
 
         await saveBroadlog([
             ...results.successful.map((userId => {
