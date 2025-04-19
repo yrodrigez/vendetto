@@ -18,9 +18,11 @@ export async function execute(client: Client) {
     const already_notified_code = 'raidReminder'
     const timezone = 'Europe/Madrid'
     const query = `
-        WITH recent_active_members AS (SELECT DISTINCT member_id
-                                       FROM public.ev_raid_participant
-                                       WHERE created_at >= NOW() - $1::interval)
+        WITH recent_active_members AS (SELECT DISTINCT m.id as member_id
+                                       FROM public.ev_raid_participant rp
+                                       join ev_member m on m.id = member_id
+                                       WHERE rp.created_at >= NOW() - $1::interval
+                                        OR m.created_at >= NOW() - $1::interval)
            , next_upcoming_raid AS (SELECT id, name, raid_date, time
                                     FROM public.raid_resets
                                     WHERE (raid_date::text || ' ' || time ::text):: timestamp > NOW() + '1 day'::interval
@@ -39,8 +41,11 @@ export async function execute(client: Client) {
                                        WHERE m.wow_account_id != 0)
            , already_notified AS (SELECT "to"
                                   FROM open_campaign.broadlog
-                                  WHERE communication_code = $2::text
-                                    AND created_at >= NOW() - $3::interval)
+                                  CROSS JOIN next_upcoming_raid
+                                  WHERE communication_code = $2::text || '_' || next_upcoming_raid.id::text
+                                    AND created_at >= NOW() - $3::interval
+                                    AND last_event = 'success'
+                                  )
         SELECT DISTINCT dm.discord_user_id                                                              AS discord_id,
                         m.character ->> 'name'                                                          AS name,
                         m.wow_account_id                                                                AS account_id,
@@ -104,7 +109,7 @@ export async function execute(client: Client) {
         },
         message: {
             seedList: ['600220534885711893'],
-            communicationCode: already_notified_code,
+            communicationCode: already_notified_code + '_' + targetData[0].raidId,
             targetMapping: {targetName: 'user'},
             content: `
             🐙 Urgent Call from Vendetto! 🐙
@@ -113,7 +118,6 @@ export async function execute(client: Client) {
             
             But seriously—don’t leave us guessing like a pug tank pulling without buffs. We need your strength, your spark, and your beautiful brain 🧠.
             
-            - 💥 This time only: confirm now and you’ll receive an extra Soft Reserve. That’s right—free loot potential just for clicking a button.
             - ⚔️ Time’s ticking. The raid isn’t going to wait for the indecisive. Sign up now, or forever explain to your gear why it’s still blue.
             - 📅 Check the calendar, pick your spot, and let’s bring the pain (and maybe some cookies).
             - 🔗 [Sign up here](<https://www.everlastingvendetta.com/raids/{{{targetData.raidId}}}>)

@@ -8,9 +8,10 @@ export async function saveBroadlog(data: {
 }[]) {
     const supabase = createServerComponentClient({schema: 'open_campaign'})
 
-    const {error} = await supabase
+    const {error, data: broadlogIds} = await supabase
         .from('broadlog')
         .insert(data)
+        .select('id')
 
     if(error) {
         console.error('Error saving broadlog', error)
@@ -19,6 +20,7 @@ export async function saveBroadlog(data: {
         }
     }
     return {
-        error
+        error,
+        broadlogIds
     }
 }

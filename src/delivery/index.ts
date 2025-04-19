@@ -80,7 +80,9 @@ export async function createDelivery({
             }
         })))).filter((message) => message !== null)
     const personalizationEnd = Date.now()
-    console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages[0], 'total: ', personalizedMessages.length)
+    console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages[0], 'total: ', personalizedMessages.length,
+        'will notify: ', personalizedMessages.map((message) => message.user.globalName || message.user.username || message.user.id).join(', ')
+        )
 
     async function send({removeDelay}: { removeDelay?: boolean } = {}) {
         const results = {
@@ -138,7 +140,7 @@ export async function createDelivery({
         console.log('Sending finished on: ', sendEnd - start, 'ms')
 
 
-        await saveBroadlog([
+        const {broadlogIds} = await saveBroadlog([
             ...results.successful.map((userId => {
                 const personalized = personalizedMessages.find((message) => message.user.id === userId)
 
