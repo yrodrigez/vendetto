@@ -2,6 +2,7 @@ import {type Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
 import moment from "moment";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 export const scheduler = {
     type: 'daily',
@@ -20,20 +21,20 @@ export async function execute(client: Client) {
     const query = `
         WITH recent_active_members AS (SELECT DISTINCT m.id as member_id
                                        FROM public.ev_raid_participant rp
-                                       join ev_member m on m.id = member_id
+                                                join ev_member m on m.id = member_id
                                        WHERE rp.created_at >= NOW() - $1::interval
-                                        OR m.created_at >= NOW() - $1::interval)
+                                          OR m.created_at >= NOW() - $1::interval)
            , next_upcoming_raid AS (SELECT id, name, raid_date, time
                                     FROM public.raid_resets
                                     WHERE (raid_date::text || ' ' || time ::text):: timestamp > NOW() + '1 day'::interval
-                                    AND (raid_date::text || ' ' || time ::text):: timestamp < NOW() + '1 week'::interval
+                                      AND (raid_date::text || ' ' || time ::text):: timestamp < NOW() + '1 week'::interval
                                     ORDER BY (raid_date::text || ' ' || time ::text):: timestamp
                                     LIMIT 1)
            , next_raid_signups AS (SELECT DISTINCT member_id
                                    FROM public.ev_raid_participant
                                    WHERE raid_id = (SELECT id FROM next_upcoming_raid)
-                                     --and details ->> 'status' != 'declined'
-                                   )
+            --and details ->> 'status' != 'declined'
+        )
            , accounts_with_signups AS (SELECT DISTINCT m.wow_account_id
                                        FROM public.ev_member m
                                                 JOIN next_raid_signups nrs
@@ -41,11 +42,10 @@ export async function execute(client: Client) {
                                        WHERE m.wow_account_id != 0)
            , already_notified AS (SELECT "to"
                                   FROM open_campaign.broadlog
-                                  CROSS JOIN next_upcoming_raid
+                                           CROSS JOIN next_upcoming_raid
                                   WHERE communication_code = $2::text || '_' || next_upcoming_raid.id::text
                                     AND created_at >= NOW() - $3::interval
-                                    AND last_event = 'success'
-                                  )
+                                    AND last_event = 'success')
         SELECT DISTINCT dm.discord_user_id                                                              AS discord_id,
                         m.character ->> 'name'                                                          AS name,
                         m.wow_account_id                                                                AS account_id,
@@ -99,7 +99,10 @@ export async function execute(client: Client) {
         characterName: p.name,
     }))
 
+    const deliveryId = await findDeliveryByName('raidReminder')
+
     const delivery = await createDelivery({
+        id: deliveryId,
         client,
         target: target,
         targetData: targetData,
@@ -120,7 +123,7 @@ export async function execute(client: Client) {
             
             - ⚔️ Time’s ticking. The raid isn’t going to wait for the indecisive. Sign up now, or forever explain to your gear why it’s still blue.
             - 📅 Check the calendar, pick your spot, and let’s bring the pain (and maybe some cookies).
-            - 🔗 [Sign up here](<https://www.everlastingvendetta.com/raids/{{{targetData.raidId}}}>)
+            - 🔗 [Sign up here](<https://www.everlastingvendetta.com/raid/{{{targetData.raidId}}}>)
             
             🐙 With an ominous tentacle wiggle,
             Vendetto, your emotionally unstable raid octopus

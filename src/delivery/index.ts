@@ -4,6 +4,9 @@ import {personalize} from "./personalize";
 import {optimizeTextContent} from "./optimizeTextContent";
 import {saveBroadlog} from "./saveBroadlog";
 import RateLimitedThreadPool from "../util/thread-pool";
+import {findUrls} from "./findUrls";
+import {registerUrls} from "./registerUrls";
+import {registerBroadlogIdInUrl} from "./registerBroadlogIdInUrl";
 
 const threadPool = new RateLimitedThreadPool(5, 5000);
 
@@ -21,23 +24,33 @@ export type TargetMapping = {
 }
 
 export type DeliveryParams = {
+    id: number
     client: Client
     target: { discordId: string }[]
     targetData: any
     message: Message
     targetMapping: TargetMapping,
 }
+const userCache = new Map<string, User>();
 
 async function getDiscordUserById(client: Client, discordId: string) {
+    if (userCache.has(discordId)) {
+        return userCache.get(discordId);
+    }
+
     try {
-        return await client.users.fetch(discordId)
+        const user = await client.users.fetch(discordId);
+        userCache.set(discordId, user);
+        return user;
     } catch (e) {
-        console.error('Error fetching user: ', e)
-        return null
+        console.error('Error fetching user: ', e);
+        return null;
     }
 }
 
+
 export async function createDelivery({
+                                         id,
                                          client,
                                          target,
                                          targetData = {},
@@ -57,6 +70,7 @@ export async function createDelivery({
     }
 
     const optimizedMessage = optimizeTextContent(message)
+
     const start = Date.now()
     console.log('Personalization started')
     const personalizedMessages = (await Promise.all(deduplicateTarget(target)
@@ -74,15 +88,24 @@ export async function createDelivery({
                 targetMapping
             })
 
+            const urls = findUrls(personalized)
+            console.log('Found urls: ', urls)
+            const registeredUrls = await registerUrls(id, urls)
+            console.log('Registered urls: ', registeredUrls)
+            registeredUrls.forEach(({url, id}) => {
+                personalized.content = personalized.content.replace(new RegExp(url, 'g'), `https://t.everlastingvendetta.com/r/${id}`)
+            })
+
             return {
                 user: user,
-                message: personalized
+                message: personalized,
+                urls: registeredUrls,
             }
         })))).filter((message) => message !== null)
     const personalizationEnd = Date.now()
     console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages[0], 'total: ', personalizedMessages.length,
         'will notify: ', personalizedMessages.map((message) => message.user.globalName || message.user.username || message.user.id).join(', ')
-        )
+    )
 
     async function send({removeDelay}: { removeDelay?: boolean } = {}) {
         const results = {
@@ -94,7 +117,7 @@ export async function createDelivery({
             console.log('No personalized messages to send')
             return results
         }
-        console.log('SENDING MESSAGES IN 5 SECONDS')
+        console.log('SENDING MESSAGES IN 5 SECONDS', personalizedMessages)
         if (!removeDelay) {
             await new Promise(resolve => setTimeout(resolve, 5000))
         }
@@ -115,54 +138,60 @@ export async function createDelivery({
                 if (randomMessage) {
                     personalizedMessages.push({
                         user,
-                        message: {content: `You are part of a seed list:\n${randomMessage.message.content}`}
+                        message: {
+                            ...randomMessage.message,
+                            content: `You are part of a seed list:\n${randomMessage.message.content}`
+                        },
+                        urls: randomMessage.urls
                     })
                 }
             }))
         }
-        await Promise.all(personalizedMessages.map(async ({user, message}: {
+        await Promise.all(personalizedMessages.map(async ({user, message, urls}: {
             user: User,
             message: Message
+            urls: { url: string, id: string }[]
         }) => threadPool.submit(async () => {
-            const {content, embeds} = message
+            const {content, embeds, communicationCode} = message
             try {
                 await user.send({
                     content,
                     embeds: embeds?.length ? embeds : undefined
                 })
                 results.successful.push(user.id)
+                const {broadlogIds} = await saveBroadlog(id, [{
+                    text: content,
+                    to: user.id,
+                    last_event: 'success' as 'success',
+                    channel: 'discord' as 'discord',
+                    communication_code: communicationCode ?? '',
+                }])
+
+                if (!broadlogIds?.length) return
+                console.log(urls)
+                await Promise.all((urls ?? []).map(async ({id: urlId}) => {
+                    const broadlogId = broadlogIds[0]?.id
+                    await registerBroadlogIdInUrl(broadlogId, urlId)
+                }))
             } catch (e) {
                 console.error('Error sending message: ', e)
                 results.failed.push(user.id)
+                const {broadlogIds} = await saveBroadlog(id, [{
+                    text: content,
+                    to: user.id,
+                    last_event: 'error' as 'error',
+                    channel: 'discord' as 'discord',
+                    communication_code: communicationCode ?? '',
+                }])
+                if (!broadlogIds?.length) return
+                await Promise.all((urls ?? [])?.map(async ({id: urlId}) => {
+                    const broadlogId = broadlogIds[0]?.id
+                    await registerBroadlogIdInUrl(broadlogId, urlId)
+                }))
             }
         })))
         const sendEnd = Date.now()
         console.log('Sending finished on: ', sendEnd - start, 'ms')
-
-
-        const {broadlogIds} = await saveBroadlog([
-            ...results.successful.map((userId => {
-                const personalized = personalizedMessages.find((message) => message.user.id === userId)
-
-                return {
-                    text: personalized?.message?.content ?? '',
-                    to: userId,
-                    last_event: 'success' as 'success',
-                    channel: 'discord' as 'discord',
-                    communication_code: personalized?.message?.communicationCode ?? '',
-                }
-            })),
-            ...results.failed.map((userId => {
-                const personalized = personalizedMessages.find((message) => message.user.id === userId)
-
-                return {
-                    text: personalized?.message?.content ?? '',
-                    to: userId,
-                    last_event: 'error' as 'error',
-                    channel: 'discord' as 'discord'
-                }
-            }))
-        ])
 
         return results
     }

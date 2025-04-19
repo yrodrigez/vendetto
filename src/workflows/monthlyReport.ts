@@ -1,11 +1,12 @@
 import {type Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
     time: '2025-04-05T19:30:00Z',
-    startNow: false,
+    startNow: true,
 }
 
 export const name = 'Monthly report'
@@ -117,7 +118,11 @@ export async function execute(client: Client) {
                 ? "so faint, we had to check the logs twice to confirm you still exist. We're not mad, just disappointed... but hey, more loot for the rest of us."
                 : "present... like a summoned imp: useful, occasionally."}`,
     }))
+
+    const deliveryId = await findDeliveryByName('monthlyReport')
+
     const delivery = await createDelivery({
+        id: deliveryId,
         client,
         target: target,
         targetData: targetData,

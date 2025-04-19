@@ -3,6 +3,7 @@ import {hasFeature} from "../util/features";
 import {getUserRoles} from "../util/userPermissions";
 import {createServerComponentClient} from "../supabase";
 import {createDelivery} from "../delivery";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 const allowedRoles = [
     'GUILD_MASTER',
@@ -96,8 +97,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         });
         return;
     }
-
+    const deliveryId = await findDeliveryByName('invitesStarted')
     const delivery = await createDelivery({
+        id: deliveryId,
         client: interaction.client,
         target: participants.map(p => ({discordId: p.id})),
         targetData: {raidName: participants[0]?.raidName ?? '', resetId},

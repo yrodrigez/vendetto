@@ -1,11 +1,12 @@
 import {type Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
     time: '2025-04-05T17:30:00Z',
-    startNow: false,
+    startNow: true,
 }
 
 export const name = 'Been a Long Time';
@@ -64,8 +65,9 @@ export async function execute(client: Client) {
     }
 
     console.log('Members to notify:', data);
-
+    const deliveryId = await findDeliveryByName('beenLongTime')
     const delivery = await createDelivery({
+        id: deliveryId,
         client,
         target: data.map(p => ({discordId: p.discord_id})),
         targetData: {},
