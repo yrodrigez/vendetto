@@ -32,7 +32,7 @@ jobs:
         run: pnpm prune --prod
 
       - name: Install PM2 if missing
-        run: pnpm add -g pm2
+        run: command -v pm2 >/dev/null 2>&1 || pnpm add -g pm2
 
       - name: Reload with PM2
         env:
