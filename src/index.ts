@@ -1,9 +1,9 @@
 import {Client, Collection, GatewayIntentBits,} from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import {config} from './config';
-import {addWorkflow, setupWorkflows} from "./scheduler";
-import {deployCommands} from "./util/deployCommands";
+import {config} from './config.js';
+import {addWorkflow, setupWorkflows} from "./scheduler.js";
+import {deployCommands} from "./util/deployCommands.js";
 
 declare module 'discord.js' {
     interface Client {

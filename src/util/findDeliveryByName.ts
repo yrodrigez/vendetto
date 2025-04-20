@@ -1,4 +1,4 @@
-import {createServerComponentClient} from "../supabase";
+import {createServerComponentClient} from "../supabase/index.js";
 
 export async function findDeliveryByName(name: string) {
     const supabase = createServerComponentClient({schema: 'open_campaign'})

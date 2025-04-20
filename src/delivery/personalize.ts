@@ -1,4 +1,4 @@
-import {type Message, type TargetMapping} from "./index";
+import {type Message, type TargetMapping} from "./index.js";
 import Mustache from "mustache";
 
 export function personalize({

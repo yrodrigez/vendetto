@@ -1,5 +1,5 @@
-import { Message } from "../../delivery";
-import { findUrls } from "../../delivery/findUrls";
+import { type Message } from "../../delivery/index.js";
+import { findUrls } from "../../delivery/findUrls.js";
 
 describe('findUrls', () => {
   test('returns empty array when no URLs are present', () => {

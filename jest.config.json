@@ -1,13 +1,16 @@
 {
-    "preset": "ts-jest",
+    "preset": "ts-jest/presets/default-esm",
     "testEnvironment": "node",
-    "testRunner": "jest-circus/runner",
+    "extensionsToTreatAsEsm": [".ts"],
     "transform": {
         "^.+\\.tsx?$": ["ts-jest", {
-            "tsconfig": "tsconfig.json"
+            "tsconfig": "tsconfig.json",
+            "useESM": true
         }]
     },
+    "moduleNameMapper": {
+        "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
     "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"],
-    "testMatch": ["**/__tests__/**/*.ts?(x)", "**/?(*.)+(spec|test).ts?(x)"],
-    "globals": {}
+    "testMatch": ["**/__tests__/**/*.ts?(x)", "**/?(*.)+(spec|test).ts?(x)"]
 }

@@ -2,7 +2,7 @@
     "apps": [
         {
             "name": "vendetto",
-            "script": "dist/index.ts",
+            "script": "dist/index.js",
             "interpreter": "node",
             "node_args": ["--dns-result-order=ipv4first"],
             "instances": 1,

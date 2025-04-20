@@ -1,7 +1,7 @@
 import {type Client} from "discord.js";
-import db, {safeQuery} from "../databse/db";
-import {createDelivery} from "../delivery";
-import {findDeliveryByName} from "../util/findDeliveryByName";
+import db, {safeQuery} from "../databse/db.js";
+import {createDelivery} from "../delivery/index.js";
+import {findDeliveryByName} from "../util/findDeliveryByName.js";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',

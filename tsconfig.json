@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "es2020",
-    "moduleResolution": "Bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "outDir": "./dist",
     "rootDir": "./src",
@@ -12,6 +12,9 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["jest"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*.ts", "src/**/*"],
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "esm": true,
+  }
 }

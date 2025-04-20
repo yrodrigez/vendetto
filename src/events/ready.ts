@@ -1,5 +1,5 @@
 import {Events, Client, ChannelType, TextChannel} from 'discord.js';
-import {hasFeature} from "../util/features";
+import {hasFeature} from "../util/features.js";
 
 module.exports = {
     name: Events.ClientReady,

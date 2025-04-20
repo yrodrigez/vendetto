@@ -1,12 +1,12 @@
 import {Client, User} from "discord.js";
-import {deduplicateTarget} from "./deduplicateTarget";
-import {personalize} from "./personalize";
-import {optimizeTextContent} from "./optimizeTextContent";
-import {saveBroadlog} from "./saveBroadlog";
-import RateLimitedThreadPool from "../util/thread-pool";
-import {findUrls} from "./findUrls";
-import {registerUrls} from "./registerUrls";
-import {registerBroadlogIdInUrl} from "./registerBroadlogIdInUrl";
+import {deduplicateTarget} from "./deduplicateTarget.js";
+import {personalize} from "./personalize.js";
+import {optimizeTextContent} from "./optimizeTextContent.js";
+import {saveBroadlog} from "./saveBroadlog.js";
+import RateLimitedThreadPool from "../util/thread-pool.js";
+import {findUrls} from "./findUrls.js";
+import {registerUrls} from "./registerUrls.js";
+import {registerBroadlogIdInUrl} from "./registerBroadlogIdInUrl.js";
 
 const threadPool = new RateLimitedThreadPool(5, 5000);
 

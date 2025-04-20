@@ -1,4 +1,4 @@
-import {createServerComponentClient} from "../supabase";
+import {createServerComponentClient} from "../supabase/index.js";
 
 export async function registerBroadlogIdInUrl(broadlogId: string, urlId: string) {
     const supabase = createServerComponentClient({schema: 'open_campaign'})
