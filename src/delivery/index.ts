@@ -174,7 +174,7 @@ export async function createDelivery({
                     await registerBroadlogIdInUrl(broadlogId, urlId)
                 }))
             } catch (e) {
-                console.error('Error sending message: ', e)
+                console.error('Error sending message to: ', user.username || user.id)
                 results.failed.push(user.id)
                 const {broadlogIds} = await saveBroadlog(id, [{
                     text: content,
