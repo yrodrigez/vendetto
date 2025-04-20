@@ -47,6 +47,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Clean dist directory
+        run: |
+          if [ -d "dist" ]; then
+            rm -rf dist
+          fi
+
       - name: Build TypeScript
         run: pnpm run build
 

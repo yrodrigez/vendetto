@@ -32,8 +32,8 @@ export function setupWorkflows(client: Client) {
     setInterval(() => {
         const now = new Date();
         const day = now.getDay(); // 0 is Sunday
-        const hour = now.getHours();
-        const minute = now.getMinutes();
+        const hour = now.getHours(); // 0-23
+        const minute = now.getMinutes(); // 0-59
         const month = now.getMonth(); // 0 is January
 
         const events = workflows.filter((event) => {
@@ -59,7 +59,7 @@ export function setupWorkflows(client: Client) {
         });
 
         if (events.length === 0) {
-            console.log('No events to execute', 'hour: ', hour, 'minute: ', minute, 'day: ', day, 'month: ', month)
+            console.log('No events to execute on', `{ hour: ${hour}, minute: ${minute}, day: ${day}, month: ${month} }`)
             return
         }
 
