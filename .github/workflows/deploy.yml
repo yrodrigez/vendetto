@@ -23,7 +23,7 @@ jobs:
         with:
           version: 10
           run_install: |
-            - args: [--prod, --frozen-lockfile, typescript]   
+            - args: [--prod, --frozen-lockfile]   
 
       - name: Build TypeScript
         run: pnpm run build
