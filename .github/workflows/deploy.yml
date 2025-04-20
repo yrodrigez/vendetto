@@ -50,4 +50,4 @@ jobs:
           POSTGRES_SSL: ${{secrets.POSTGRES_SSL}}
         run: |
           export RUNNER_TRACKING_ID=0
-          pm2 startOrRestart ecosystem.config.js --env production
+          pm2 startOrRestart ecosystem.config.json --env production
