@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-test-deploy:
-    runs-on: self-hosted        # matches the runner you registered
+    runs-on: self-hosted
     defaults:
       run:
         shell: bash
@@ -31,6 +31,9 @@ jobs:
       - name: Prune dev deps
         run: pnpm prune --prod
 
+      - name: Install PM2 if missing
+        run: pnpm add -g pm2
+
       - name: Reload with PM2
         env:
           NODE_ENV: development
@@ -45,5 +48,6 @@ jobs:
           POSTGRES_USER: ${{secrets.POSTGRES_USER}}
           POSTGRES_DATABASE: ${{secrets.POSTGRES_DATABASE}}
           POSTGRES_SSL: ${{secrets.POSTGRES_SSL}}
-
-        run: pm2 startOrRestart ecosystem.config.js --env production
+        run: |
+          export RUNNER_TRACKING_ID=0
+          pm2 startOrRestart ecosystem.config.js --env production

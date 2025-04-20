@@ -4,11 +4,10 @@
 module.exports = {
     apps: [
         {
-            // ----------- WHAT TO RUN ----------
-            name: 'vendetto',              // Human‑friendly id in pm2 ls
-            script: 'src/index.ts',
+            name: 'vendetto',
+            script: 'dist/index.ts',
             interpreter: 'node',
-            node_args: ['-r', 'ts-node/register', '--dns-result-order=ipv4first'],
+            node_args: ['--dns-result-order=ipv4first'],
             instances: 1,
             autorestart: true,
             watch: false,

@@ -2,10 +2,10 @@
   "name": "vendetto",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "module": "CommonJS",
   "scripts": {
-    "start": "NODE_OPTIONS='--dns-result-order=ipv4first' ts-node src/index.ts",
+    "start": "node dist/index.js",
     "build": "tsc",
     "dev": "ts-node-dev --respawn src/index.ts"
   },
