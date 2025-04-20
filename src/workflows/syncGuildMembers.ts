@@ -4,7 +4,7 @@ import {createServerComponentClient} from "../supabase/index.js";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
-    time: '2025-04-05T19:15:00Z',
+    time: '2025-04-05T20:14:00',
     startNow: true,
 }
 

@@ -6,7 +6,7 @@ import {findDeliveryByName} from "../util/findDeliveryByName.js";
 
 export const scheduler = {
     type: 'daily',
-    time: '2025-04-05T17:30:00Z',
+    time: '2025-04-05T17:30:00',
     startNow: true,
 }
 

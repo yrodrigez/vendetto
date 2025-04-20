@@ -38,6 +38,10 @@ export function setupWorkflows(client: Client) {
 
         const events = workflows.filter((event) => {
             const eventDate = new Date(event.time);
+            if (isNaN(eventDate.getTime())) {
+                console.error('Invalid date format for event:', event.time, event.name);
+                return false;
+            }
             const eventDay = eventDate.getDay();
             const eventHour = eventDate.getHours();
             const eventMinute = eventDate.getMinutes();
