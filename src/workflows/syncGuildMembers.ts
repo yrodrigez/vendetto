@@ -1,6 +1,6 @@
 import {Client} from "discord.js";
-import {hasFeature} from "../util/features.js";
-import {createServerComponentClient} from "../supabase/index.js";
+import {hasFeature} from "../util/features";
+import {createServerComponentClient} from "../supabase";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',

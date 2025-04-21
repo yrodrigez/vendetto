@@ -1,5 +1,5 @@
 import {describe, expect, test} from '@jest/globals';
-import {deduplicateTarget} from '../../delivery/deduplicateTarget.js';
+import {deduplicateTarget} from '../../delivery/deduplicateTarget';
 
 describe('deduplicateTarget', () => {
     test('returns empty array for empty input', () => {

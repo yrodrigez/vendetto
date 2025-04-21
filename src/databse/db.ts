@@ -1,4 +1,4 @@
-import {postgresConfig} from "../config.js";
+import {postgresConfig} from "../config";
 import {Pool} from 'pg'
 
 const {

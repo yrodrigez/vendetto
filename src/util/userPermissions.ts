@@ -1,4 +1,4 @@
-import {createServerComponentClient} from '../supabase/index.js';
+import {createServerComponentClient} from '../supabase';
 
 export async function getUserRoles(userId: string): Promise<string[]> {
     const supabase = createServerComponentClient()

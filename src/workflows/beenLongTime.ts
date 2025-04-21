@@ -1,7 +1,7 @@
 import {type Client} from "discord.js";
-import db, {safeQuery} from "../databse/db.js";
-import {createDelivery} from "../delivery/index.js";
-import {findDeliveryByName} from "../util/findDeliveryByName.js";
+import db, {safeQuery} from "../databse/db";
+import {createDelivery} from "../delivery";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
@@ -50,7 +50,7 @@ export async function execute(client: Client) {
         ORDER BY name
     `
 
-    const { data, error } = await safeQuery<{ discord_id: string, name: string, account_id: number }[]>(() =>
+    const {data, error} = await safeQuery<{ discord_id: string, name: string, account_id: number }[]>(() =>
         db.query(query, [communicationCode, timeInterval]).then(r => r.rows)
     );
 
@@ -64,21 +64,21 @@ export async function execute(client: Client) {
         return;
     }
 
-    console.log('Members to notify:', data);
+    console.log(`Members to notify ${communicationCode}:`, data);
     const deliveryId = await findDeliveryByName('beenLongTime')
     const delivery = await createDelivery({
         id: deliveryId,
         client,
         target: data.map(p => ({discordId: p.discord_id})),
-        targetData: {},
-        targetMapping: {targetName: 'user'},
+        targetData: data.map((x) => ({userName: x.name, discordId: x.discord_id})),
+        targetMapping: {identifier: 'discordId', targetName: 'user'},
         message: {
             communicationCode,
             targetMapping: {targetName: 'user'},
             content: `
             # 🐙 Vendetto from Everlasting Vendetta here, waving all my eight arms excitedly! 🐙
 
-            Hey {{{user.displayName}}}! We've noticed it's been quite a while since you've last journeyed with Everlasting Vendetta. Azeroth has evolved, and our ocean feels a little emptier without you! 🌊
+            Hey {{{targetData.userName}}}! We've noticed it's been quite a while since you've last journeyed with Everlasting Vendetta. Azeroth has evolved, and our ocean feels a little emptier without you! 🌊
             
             ## Exciting things have been happening:
             
@@ -108,6 +108,6 @@ export async function execute(client: Client) {
 
     const {successful, failed} = await delivery.send();
 
-    console.log('Delivery successful:', successful.length);
-    console.log('Delivery failed:', failed.length);
+    console.log(`Delivery ${communicationCode} successful:`, successful.length);
+    console.log(`Delivery ${communicationCode} failed:`, failed.length);
 }

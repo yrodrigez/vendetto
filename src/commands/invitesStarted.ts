@@ -1,9 +1,9 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
-import {hasFeature} from "../util/features.js";
-import {getUserRoles} from "../util/userPermissions.js";
-import {createServerComponentClient} from "../supabase/index.js";
-import {createDelivery} from "../delivery/index.js";
-import {findDeliveryByName} from "../util/findDeliveryByName.js";
+import {hasFeature} from "../util/features";
+import {getUserRoles} from "../util/userPermissions";
+import {createServerComponentClient} from "../supabase";
+import {createDelivery} from "../delivery";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 const allowedRoles = [
     'GUILD_MASTER',

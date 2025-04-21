@@ -1,6 +1,6 @@
 import {describe, expect, test, beforeEach, jest} from '@jest/globals';
 import Mustache from 'mustache';
-import {personalize} from '../../delivery/personalize.js';
+import {personalize} from '../../delivery/personalize';
 
 // Mock Mustache
 jest.mock('mustache');

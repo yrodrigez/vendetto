@@ -1,4 +1,4 @@
-import RateLimitedThreadPool from '../../util/thread-pool.js';
+import RateLimitedThreadPool from '../../util/thread-pool';
 
 describe('RateLimitedThreadPool', () => {
     beforeEach(() => {

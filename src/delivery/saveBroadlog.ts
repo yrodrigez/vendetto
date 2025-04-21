@@ -1,4 +1,4 @@
-import {createServerComponentClient} from "../supabase/index.js";
+import {createServerComponentClient} from "../supabase";
 
 export async function saveBroadlog(deliveryId: number, data: {
     text: string,

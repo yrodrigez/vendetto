@@ -1,4 +1,4 @@
-import {createServerComponentClient} from "../supabase/index.js";
+import {createServerComponentClient} from "../supabase";
 import crypto from 'crypto';
 
 function generateShortCode(length = 6) {

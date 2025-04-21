@@ -1,12 +1,12 @@
 import {Client, User} from "discord.js";
-import {deduplicateTarget} from "./deduplicateTarget.js";
-import {personalize} from "./personalize.js";
-import {optimizeTextContent} from "./optimizeTextContent.js";
-import {saveBroadlog} from "./saveBroadlog.js";
-import RateLimitedThreadPool from "../util/thread-pool.js";
-import {findUrls} from "./findUrls.js";
-import {registerUrls} from "./registerUrls.js";
-import {registerBroadlogIdInUrl} from "./registerBroadlogIdInUrl.js";
+import {deduplicateTarget} from "./deduplicateTarget";
+import {personalize} from "./personalize";
+import {optimizeTextContent} from "./optimizeTextContent";
+import {saveBroadlog} from "./saveBroadlog";
+import RateLimitedThreadPool from "../util/thread-pool";
+import {findUrls} from "./findUrls";
+import {registerUrls} from "./registerUrls";
+import {registerBroadlogIdInUrl} from "./registerBroadlogIdInUrl";
 
 const threadPool = new RateLimitedThreadPool(5, 5000);
 
@@ -89,9 +89,7 @@ export async function createDelivery({
             })
 
             const urls = findUrls(personalized)
-            console.log('Found urls: ', urls)
             const registeredUrls = await registerUrls(id, urls)
-            console.log('Registered urls: ', registeredUrls)
             registeredUrls.forEach(({url, id}) => {
                 personalized.content = personalized.content.replace(new RegExp(url, 'g'), `https://t.everlastingvendetta.com/r/${id}`)
             })
@@ -103,7 +101,7 @@ export async function createDelivery({
             }
         })))).filter((message) => message !== null)
     const personalizationEnd = Date.now()
-    console.log('Personalization finished on: ', personalizationEnd - start, 'ms', personalizedMessages[0], 'total: ', personalizedMessages.length,
+    console.log(personalizedMessages[0].message,`Personalization finished on: ${personalizationEnd - start}ms`, 'total: ', personalizedMessages.length,
         'will notify: ', personalizedMessages.map((message) => message.user.globalName || message.user.username || message.user.id).join(', ')
     )
 

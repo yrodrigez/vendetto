@@ -1,4 +1,4 @@
-import {type Message} from "./index.js";
+import {type Message} from "./";
 
 export function optimizeTextContent(message: Message): Message {
     // Join lines with new line

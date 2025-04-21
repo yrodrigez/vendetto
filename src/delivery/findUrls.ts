@@ -1,4 +1,4 @@
-import {type Message} from "./index.js";
+import {type Message} from "./";
 
 export function findUrls(message: Message): string[] {
     const urlRegex = /(https?:\/\/[^\s,"'()<>]+(?:\([^\s,"'()<>]*\)|[^\s,"'()<>]*)*)/g;

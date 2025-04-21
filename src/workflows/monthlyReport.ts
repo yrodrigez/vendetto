@@ -1,7 +1,7 @@
 import {type Client} from "discord.js";
-import db, {safeQuery} from "../databse/db.js";
-import {createDelivery} from "../delivery/index.js";
-import {findDeliveryByName} from "../util/findDeliveryByName.js";
+import db, {safeQuery} from "../databse/db";
+import {createDelivery} from "../delivery";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
@@ -39,7 +39,9 @@ export async function execute(client: Client) {
                                                  FROM public.ev_raid_participant rp
                                                           JOIN public.raid_resets rr
                                                                ON rp.raid_id = rr.id
-                                                 WHERE rp.created_at >= NOW() - INTERVAL '1 month'
+                                                 WHERE rp.created_at::date >= (NOW() - INTERVAL '1 month')
+                                                 AND rr.end_date::date >= NOW() - INTERVAL '1 month'
+                                                 AND rr.raid_date::date < NOW()
                                                  GROUP BY rp.member_id),
              participation_ranking AS (SELECT member_id,
                                               participation_count,
@@ -158,6 +160,6 @@ export async function execute(client: Client) {
 
     const {successful, failed} = await delivery.send();
 
-    console.log('Delivery successful:', successful.length);
-    console.log('Delivery failed:', failed.length);
+    console.log(`Delivery ${communicationCode} successful:`, successful.length);
+    console.log(`Delivery ${communicationCode} failed:`, failed.length);
 }

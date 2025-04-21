@@ -1,8 +1,8 @@
 import {type Client} from "discord.js";
-import db, {safeQuery} from "../databse/db.js";
-import {createDelivery} from "../delivery/index.js";
+import db, {safeQuery} from "../databse/db";
+import {createDelivery} from "../delivery";
 import moment from "moment";
-import {findDeliveryByName} from "../util/findDeliveryByName.js";
+import {findDeliveryByName} from "../util/findDeliveryByName";
 
 export const scheduler = {
     type: 'daily',
@@ -44,7 +44,7 @@ export async function execute(client: Client) {
                                   FROM open_campaign.broadlog
                                            CROSS JOIN next_upcoming_raid
                                   WHERE communication_code = $2::text || '_' || next_upcoming_raid.id::text
-                                    AND created_at >= NOW() - $3::interval
+                                    AND created_at::date >= NOW() - $3::interval
                                     AND last_event = 'success')
         SELECT DISTINCT dm.discord_user_id                                                              AS discord_id,
                         m.character ->> 'name'                                                          AS name,
@@ -100,7 +100,7 @@ export async function execute(client: Client) {
     }))
 
     const deliveryId = await findDeliveryByName('raidReminder')
-
+    const communicationCode = already_notified_code + '_' + targetData[0].raidId
     const delivery = await createDelivery({
         id: deliveryId,
         client,
@@ -112,7 +112,7 @@ export async function execute(client: Client) {
         },
         message: {
             seedList: ['600220534885711893'],
-            communicationCode: already_notified_code + '_' + targetData[0].raidId,
+            communicationCode,
             targetMapping: {targetName: 'user'},
             content: `
             🐙 Urgent Call from Vendetto! 🐙
@@ -130,8 +130,9 @@ export async function execute(client: Client) {
             `
         }
     })
+
     const {successful, failed} = await delivery.send();
 
-    console.log('Delivery successful:', successful.length);
-    console.log('Delivery failed:', failed.length);
+    console.log(`Delivery ${communicationCode} successful:`, successful.length);
+    console.log(`Delivery ${communicationCode} failed:`, failed.length);
 }
