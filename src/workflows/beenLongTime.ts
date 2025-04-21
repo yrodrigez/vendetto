@@ -2,6 +2,7 @@ import {type Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
 import {findDeliveryByName} from "../util/findDeliveryByName";
+import seedList from "../seeds";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
@@ -73,6 +74,7 @@ export async function execute(client: Client) {
         targetData: data.map((x) => ({userName: x.name, discordId: x.discord_id})),
         targetMapping: {identifier: 'discordId', targetName: 'user'},
         message: {
+            seedList,
             communicationCode,
             targetMapping: {targetName: 'user'},
             content: `

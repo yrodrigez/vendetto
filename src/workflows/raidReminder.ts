@@ -3,6 +3,7 @@ import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
 import moment from "moment";
 import {findDeliveryByName} from "../util/findDeliveryByName";
+import seedList from "../seeds";
 
 export const scheduler = {
     type: 'daily',
@@ -111,7 +112,7 @@ export async function execute(client: Client) {
             identifier: 'discordId',
         },
         message: {
-            seedList: ['600220534885711893'],
+            seedList,
             communicationCode,
             targetMapping: {targetName: 'user'},
             content: `
