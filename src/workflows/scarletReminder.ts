@@ -5,7 +5,7 @@ import seedList from "../seeds";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
-    time: '2025-04-05T20:14:00',
+    time: '2025-04-05T17:15:00',
     startNow: true,
 }
 
@@ -76,7 +76,7 @@ export async function execute(client: Client) {
         raidId: raid_id,
     }));
 
-    const pdfUrl = '<https://drive.google.com/file/d/1wqEIPdwaWZAUx_bdgSRCE5DM8u7CFKsg/view>';
+    const pdfUrl = '<https://drive.google.com/file/d/1Cfay3zVrmProBCrtHQFeruRsjHlUkNeu/view>';
     const srURL = '<https://www.everlastingvendetta.com/raid/{{{targetData.raidId}}}/soft-reserv>';
     const termsURL = '<https://www.everlastingvendetta.com/terms>';
     const videoURL = '<https://www.youtube.com/watch?v=YZfkwr-jsqM>';
@@ -110,7 +110,7 @@ export async function execute(client: Client) {
             
             See you in battle!
             
-            🐙 Your favorite octopus, Vendetto, Vendetto 🐙
+            🐙 Your favorite octopus, Vendetto 🐙
             `
         }
     })
