@@ -27,7 +27,7 @@ export async function execute(client: Client) {
                                           OR m.created_at >= NOW() - $1::interval)
            , next_upcoming_raid AS (SELECT id, name, raid_date, time
                                     FROM public.raid_resets
-                                    WHERE (raid_date::text || ' ' || time ::text):: timestamp > NOW() + '1 day'::interval
+                                    WHERE (raid_date::text || ' ' || time ::text):: timestamp > NOW() + '2 hours'::interval
                                       AND (raid_date::text || ' ' || time ::text):: timestamp < NOW() + '1 week'::interval
                                     ORDER BY (raid_date::text || ' ' || time ::text):: timestamp
                                     LIMIT 1)
