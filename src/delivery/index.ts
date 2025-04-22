@@ -72,7 +72,7 @@ export async function createDelivery({
     const optimizedMessage = optimizeTextContent(message)
 
     const start = Date.now()
-    console.log('Personalization started')
+    console.log('Personalization started', optimizedMessage.communicationCode)
     const personalizedMessages = (await Promise.all(deduplicateTarget(target)
         .map(async ({discordId}) => threadPool.submit(async () => {
             const user = await getDiscordUserById(client, discordId);
@@ -91,7 +91,7 @@ export async function createDelivery({
             const urls = findUrls(personalized)
             const registeredUrls = await registerUrls(id, urls)
             registeredUrls.forEach(({url, id}) => {
-                personalized.content = personalized.content.replace(new RegExp(url, 'g'), `https://t.everlastingvendetta.com/r/${id}`)
+                personalized.content = personalized.content.replaceAll(url, `https://t.everlastingvendetta.com/r/${id}`)
             })
 
             return {
