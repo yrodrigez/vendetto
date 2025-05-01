@@ -8,7 +8,7 @@ import seedList from "../seeds";
 export const scheduler = {
     type: 'daily',
     time: '2025-04-05T17:30:00',
-    startNow: true,
+    startNow: false,
 }
 
 export const name = 'Campaign: Raid Reminder'
