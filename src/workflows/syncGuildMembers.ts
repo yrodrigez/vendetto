@@ -1,9 +1,11 @@
 import {Client} from "discord.js";
 import {hasFeature} from "../util/features";
 import {createServerComponentClient} from "../supabase";
+import {createDelivery} from "../delivery";
+import seedList from "../seeds";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
-    type: 'daily',
+    type: 'hourly',
     time: '2025-04-05T20:14:00',
     startNow: true,
 }
@@ -137,5 +139,27 @@ export async function execute(client: Client) {
         console.error('Error upserting members to supabase:', errorInsert);
     } else {
         console.log('Inserted members:', payload.length);
+        if (payload.length) {
+            try {
+                const delivery = await createDelivery({
+                    id: 6, // Notification
+                    client,
+                    target: seedList.map(x => ({discordId: x})),
+                    targetData: [],
+                    targetMapping: {
+                        targetName: 'user',
+                        identifier: 'discordId',
+                    },
+                    message: {
+                        communicationCode: name,
+                        targetMapping: {targetName: 'user'},
+                        content: `${payload.length} new members inserted!`
+                    }
+                })
+                await delivery.send();
+            } catch (e) {
+                console.error('Sync Guild Members Error: ', e);
+            }
+        }
     }
 }

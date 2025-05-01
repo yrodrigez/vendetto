@@ -7,7 +7,7 @@ import seedList from "../seeds";
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
     time: '2025-04-05T17:30:00',
-    startNow: true,
+    startNow: false,
 }
 
 export const name = 'Been a Long Time';
@@ -18,14 +18,14 @@ export async function execute(client: Client) {
     const query = `
         WITH recent_participants AS (SELECT DISTINCT member_id
                                      FROM public.ev_raid_participant
-                                     WHERE created_at >= NOW() - $2::interval),
+                                     WHERE created_at >= NOW() - $2::interval), -- 3 weeks
              older_participants AS (SELECT DISTINCT member_id
                                     FROM public.ev_raid_participant
-                                    WHERE created_at < NOW() - $2::interval),
+                                    WHERE created_at < NOW() - $2::interval), -- 3 weeks
              recent_wow_accounts AS (SELECT DISTINCT m.wow_account_id
                                      FROM public.ev_raid_participant rp
                                               JOIN public.ev_member m ON m.id = rp.member_id
-                                     WHERE rp.created_at >= NOW() - $2::interval
+                                     WHERE rp.created_at >= NOW() - $2::interval -- 3 weeks
                                        AND m.wow_account_id != 0),
              alt_names AS (
                  -- Names that belong to accounts with wow_account_id != 0

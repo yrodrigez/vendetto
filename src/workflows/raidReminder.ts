@@ -30,6 +30,7 @@ export async function execute(client: Client) {
                                     WHERE (raid_date::text || ' ' || time ::text):: timestamp > NOW() + '2 hours'::interval
                                       AND (raid_date::text || ' ' || time ::text):: timestamp < NOW() + '1 week'::interval
                                       AND (status != 'offline' OR status is null)
+                                      AND (raid_id = 'e8dd5197-9cb4-4d57-9d5a-15c0a2ef3087') -- SCARLET ENCLAVE
                                     ORDER BY (raid_date::text || ' ' || time ::text):: timestamp
                                     LIMIT 1)
            , next_raid_signups AS (SELECT DISTINCT member_id

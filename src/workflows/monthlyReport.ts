@@ -7,7 +7,7 @@ import seedList from "../seeds";
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'daily',
     time: '2025-04-05T19:30:00',
-    startNow: true,
+    startNow: false,
 }
 
 export const name = 'Monthly report'
@@ -51,7 +51,7 @@ export async function execute(client: Client) {
                                        FROM participation_in_the_last_month),
              already_notified AS (SELECT "to"
                                   FROM open_campaign.broadlog
-                                  WHERE created_at >= NOW() - '1 day'::interval
+                                  WHERE created_at >= NOW() - '2 day'::interval
                                      OR (
                                       communication_code = $1::text
                                           AND created_at >= NOW() - $2::interval
