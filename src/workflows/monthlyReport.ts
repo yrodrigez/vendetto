@@ -123,7 +123,7 @@ export async function execute(client: Client) {
     }))
 
     const deliveryId = await findDeliveryByName('monthlyReport')
-
+/*
     const delivery = await createDelivery({
         id: deliveryId,
         client,
@@ -164,4 +164,6 @@ export async function execute(client: Client) {
 
     console.log(`Delivery ${communicationCode} successful:`, successful.length);
     console.log(`Delivery ${communicationCode} failed:`, failed.length);
+*/
+
 }

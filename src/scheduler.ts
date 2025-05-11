@@ -57,7 +57,7 @@ export function setupWorkflows(client: Client) {
                 return true
             } else if (event.type === 'minutely') {
                 return true
-            } else if (event.type === 'hourly' && hour === eventHour && minute === eventMinute) {
+            } else if (event.type === 'hourly' && minute === eventMinute) {
                 return true
             }
         });
