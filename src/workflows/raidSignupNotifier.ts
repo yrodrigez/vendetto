@@ -2,7 +2,6 @@ import {Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
 import seedList from "../seeds";
-import moment from "moment";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'hourly',
@@ -13,11 +12,9 @@ export const scheduler: { type: string; time: string, startNow: boolean } = {
 export const name = 'Raid Signup Notifier';
 
 export async function execute(client: Client) {
-    // Check for signups in the last hour
     const timeWindow = '1 hour';
     const communicationCode = 'raid_signup_notifier';
     
-    // First, get recent signups
     const recentSignupsQuery = `
         SELECT 
             rp.member_id,
@@ -66,7 +63,6 @@ export async function execute(client: Client) {
         return;
     }
 
-    // Next, get already notified signups from the last hour
     const notifiedQuery = `
         SELECT 
             b."text" AS notification_text
@@ -89,9 +85,7 @@ export async function execute(client: Client) {
         return;
     }
 
-    // Filter out already notified signups
-    // This is a simplistic approach - we'll consider a signup already notified if the character name 
-    // and raid name appear in any previous notification text
+
     const notifiedTexts = notifiedData?.map(row => row.notification_text.toLowerCase()) || [];
     
     const newSignups = recentSignups.filter(signup => {
@@ -139,11 +133,10 @@ export async function execute(client: Client) {
         });
     });
 
-    // Create content for the notification
     let content = '🐙 **New Raid Signups Alert** 🐙\n\n';
     
     Object.values(raidSignups).forEach(raid => {
-        const formattedDate = moment(`${raid.raidDate} ${raid.time}`).format('dddd, MMMM Do [at] h:mm A');
+        const formattedDate = `${raid.raidDate}`
         
         content += `📅 **${raid.raidName}** on ${formattedDate}\n`;
         content += '```\n';
@@ -157,7 +150,6 @@ export async function execute(client: Client) {
         content += `🔗 [View Raid Details](<https://www.everlastingvendetta.com/raid/${raid.raidId}>)\n\n`;
     });
 
-    // Send notification to the seedList
     try {
         const delivery = await createDelivery({
             id: 6, // Notification
