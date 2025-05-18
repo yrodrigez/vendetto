@@ -2,6 +2,7 @@ import {Client} from "discord.js";
 import db, {safeQuery} from "../databse/db";
 import {createDelivery} from "../delivery";
 import seedList from "../seeds";
+import moment from "moment";
 
 export const scheduler: { type: string; time: string, startNow: boolean } = {
     type: 'hourly',
@@ -22,11 +23,12 @@ export async function execute(client: Client) {
             rp.created_at,
             rp.updated_at,
             rp.details->>'status' AS status,
+            rp.details->>'role' AS role,
             rr.raid_date,
             rr.time,
             r.name AS raid_name,
             m.character->>'name' AS character_name,
-            m.character->>'class' AS character_class
+            m.character->'character_class'->>'name' AS character_class
         FROM 
             public.ev_raid_participant rp
             JOIN public.raid_resets rr ON rr.id = rp.raid_id
@@ -44,6 +46,7 @@ export async function execute(client: Client) {
         created_at: string,
         updated_at: string,
         status: string,
+        role: string,
         raid_date: string,
         time: string,
         raid_name: string,
@@ -108,6 +111,7 @@ export async function execute(client: Client) {
             characterName: string,
             characterClass: string,
             status: string,
+            role: string,
             memberId: string
         }>
     }> = {};
@@ -129,21 +133,54 @@ export async function execute(client: Client) {
             characterName: signup.character_name,
             characterClass: signup.character_class,
             status: signup.status,
+            role: signup.role,
             memberId: signup.member_id
         });
     });
 
+    // Fetch aggregated counts of status by role per raid
+    const raidIds = Object.keys(raidSignups);
+    const countsQuery = `
+        SELECT 
+            raid_id, 
+            details->>'status' AS status, 
+            details->>'role' AS role, 
+            COUNT(*) AS count
+        FROM public.ev_raid_participant
+        WHERE raid_id = ANY($1::uuid[])
+        GROUP BY raid_id, status, role;
+    `;
+    const { data: countsData } = await safeQuery<{ raid_id: string; status: string; role: string; count: string }[]>(() =>
+        db.query(countsQuery, [raidIds]).then(r => r.rows)
+    );
+    // Organize counts by raid
+    const raidCounts: Record<string, Record<string, Record<string, number>>> = {};
+    countsData?.forEach(row => {
+        raidCounts[row.raid_id] ||= {};
+        raidCounts[row.raid_id][row.status] ||= {};
+        raidCounts[row.raid_id][row.status][row.role] = Number(row.count);
+    });
+
     let content = '🐙 **New Raid Signups Alert** 🐙\n\n';
-    
     Object.values(raidSignups).forEach(raid => {
-        const formattedDate = `${raid.raidDate}`
-        
+        // insert summary of counts
+        const counts = raidCounts[raid.raidId] || {};
+        content += '**Current Raid Status:**\n';
+        Object.entries(counts).forEach(([status, roles]) => {
+            const emoji = status === 'confirmed' ? '✅' : status === 'late' ? '⏰' : '❓';
+            const rolesList = Object.entries(roles)
+                .map(([roleName, cnt]) => `${roleName}: ${cnt}`)
+                .join(', ');
+            content += `${emoji} ${status}: ${rolesList}\n`;
+        });
+        content += '\n';
+
+        const formattedDate = moment(raid.raidDate).format('dddd, D MMMM'); // e.g. "Sunday, 18 May"
         content += `📅 **${raid.raidName}** on ${formattedDate}\n`;
         content += '```\n';
-        
         raid.signups.forEach(signup => {
             const statusEmoji = signup.status === 'confirmed' ? '✅' : '❓';
-            content += `${statusEmoji} ${signup.characterName} (${signup.characterClass}) - ${signup.status}\n`;
+            content += `${statusEmoji} ${signup.characterName} (${signup.characterClass}) - ${signup.status} (${signup.role})\n`;
         });
         
         content += '```\n';
@@ -152,7 +189,7 @@ export async function execute(client: Client) {
 
     try {
         const delivery = await createDelivery({
-            id: 6, // Notification
+            id: 6,
             client,
             target: seedList.map(x => ({discordId: x})),
             targetData: [],
@@ -168,10 +205,11 @@ export async function execute(client: Client) {
         });
 
         const {successful, failed} = await delivery.send();
-        
+
         console.log(`Delivery ${communicationCode} successful:`, successful.length);
         console.log(`Delivery ${communicationCode} failed:`, failed.length);
     } catch (e) {
         console.error('Raid Signup Notifier Error:', e);
     }
 }
+
