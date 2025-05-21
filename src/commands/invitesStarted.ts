@@ -128,7 +128,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     responseMessage += `✅ Successfully notified: ${results.successful.length} members`
 
     if (results.failed.length > 0) {
-        responseMessage += `\n❌ Failed to notify: ${results.failed.length} members (they may have DMs disabled)`;
+        const names = results.failed.map((user, i, arr) => `<@${user}>${i === arr.length-2 ? ' and ' : ''}`).join(', ')
+        responseMessage += `
+        HEY!, ${names} the invites started! 🎉.
+        BTW, I couldn't reach you! But don't worry, I'm not mad! Just a little disappointed. 😢
+        Maybe check your DM settings? I promise I'm not sending you any weird messages! 
+        Just a friendly reminder about the raids!
+        Yours truly, Vendetto! 🐙
+        `;
     }
 
     await interaction.editReply({
