@@ -1,13 +1,14 @@
-import dotenv from 'dotenv';
-import {type SupabaseClient, createClient as createServerClient} from "@supabase/supabase-js";
 
-dotenv.config();
+import {type SupabaseClient, createClient as createServerClient} from "@supabase/supabase-js";
+import { getEnvironmentVariable } from "../infrastructure/environment";
 
 export function createServerComponentClient(options?: { schema: string }): SupabaseClient {
 
+    const environment = getEnvironmentVariable();
+
     return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        environment.supabaseUrl,
+        environment.supabaseAnnonKey,
         {db: {schema: options?.schema ? options.schema : 'public'}}
     ) as SupabaseClient
 }

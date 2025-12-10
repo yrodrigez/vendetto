@@ -132,8 +132,8 @@ export async function execute(client: Client) {
         }
     })
 
-    const {successful, failed} = await delivery.send();
+    /*const {successful, failed} = await delivery.send();
 
     console.log(`Delivery ${name} successful:`, successful.length);
-    console.log(`Delivery ${name} failed:`, failed.length);
+    console.log(`Delivery ${name} failed:`, failed.length);*/
 }
