@@ -1,81 +1,19 @@
-name: ccm-deploy
+name: Deploy to Cloudflare Workers
+
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build-test-deploy:
-    runs-on: self-hosted
-    defaults:
-      run:
-        shell: bash
-
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Clean dist directory
+      - name: Deploy
         run: |
-          if [ -d "dist" ]; then
-            rm -rf dist
-          fi
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Clean dist directory
-        run: |
-          if [ -d "dist" ]; then
-            rm -rf dist
-          fi
-
-      - name: Build TypeScript
-        run: pnpm run build
-
-      - name: Prune dev deps
-        run: pnpm prune --prod
-
-      - name: Install PM2 if missing
-        run: command -v pm2 >/dev/null 2>&1 || pnpm add -g pm2
-
-      - name: Reload with PM2
-        env:
-          NODE_ENV: development
-          DISCORD_TOKEN: ${{secrets.DISCORD_TOKEN}}
-          CLIENT_ID: ${{secrets.CLIENT_ID}}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY}}
-          NEXT_PUBLIC_SUPABASE_URL: ${{secrets.NEXT_PUBLIC_SUPABASE_URL}}
-          # database connection
-          POSTGRES_HOST: ${{secrets.POSTGRES_HOST}}
-          POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}}
-          POSTGRES_PORT: ${{secrets.POSTGRES_PORT}}
-          POSTGRES_USER: ${{secrets.POSTGRES_USER}}
-          POSTGRES_DATABASE: ${{secrets.POSTGRES_DATABASE}}
-          POSTGRES_SSL: ${{secrets.POSTGRES_SSL}}
-        run: |
-          export RUNNER_TRACKING_ID=0
-          pm2 startOrRestart ecosystem.config.json --env production
+          curl --request GET \
+            --url "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
+            --header "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+            --fail --silent --show-error
