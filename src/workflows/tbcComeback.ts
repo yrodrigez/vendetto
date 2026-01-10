@@ -90,8 +90,6 @@ export async function execute(client: Client) {
 
             ## 🎮 Ready to jump back in?
 
-            Hop into our [Discord](<https://discord.gg/fYw9WCNFDU>) and let us know you're coming back! Check out the [guild website](<https://www.everlastingvendetta.com>) for all the latest updates and raid schedules.
-
             **Already on Spineshatter Alliance?** Perfect! Reach out to **@Mephius**, **@Alveric**, or **@Felsargon** in-game for a guild invite. Alternatively, you can apply directly through our website at [everlastingvendetta.com/apply](<https://www.everlastingvendetta.com/apply>).
 
             We've missed you, {{{targetData.userName}}}. Azeroth hasn't been the same without your questionable talent choices and legendary AFK moments. 💚
@@ -99,7 +97,6 @@ export async function execute(client: Client) {
             *YOU ARE NOT PREPARED... to miss this comeback!*
 
             Warm tentacle hugs and portal summons,
-            Your overly enthusiastic guild octopus, **Vendetto** 🐙
             # Everlasting Vendetta Team
             `
         }
