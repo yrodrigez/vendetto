@@ -1,5 +1,5 @@
 // scheduler.ts
-import {type Client} from "discord.js";
+import { type Client } from "discord.js";
 
 const workflows: {
     execute: (client: Client) => {}
@@ -30,7 +30,7 @@ export function setupWorkflows(client: Client) {
     })
 
     setInterval(() => {
-        const now = new Date();
+        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
         const day = now.getDay(); // 0 is Sunday
         const hour = now.getHours(); // 0-23
         const minute = now.getMinutes(); // 0-59

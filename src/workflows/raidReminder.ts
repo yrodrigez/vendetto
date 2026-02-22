@@ -117,24 +117,33 @@ export async function execute(client: Client) {
             communicationCode,
             targetMapping: {targetName: 'user'},
             content: `
-            🐙 Urgent Call from Vendetto! 🐙
+            # 🐙 Urgent Call from the Depths of Zangarmarsh! 🐙
 
-            Hey {{{targetData.characterName}}}, the next **{{{targetData.raidName}}}** is almost upon us ({{{targetData.raidDate}}}), and you still haven’t signed up!. You okay? Blink twice if you’re trapped in Stranglethorn again. 🧟
+            Hey {{{targetData.characterName}}}, the next **{{{targetData.raidName}}}** is almost upon us ({{{targetData.raidDate}}}), and you still haven't signed up!
+
+            Are you okay? Did you get lost in the Twisting Nether? Trapped in a Shattered Halls gauntlet? Ganked in Hellfire Peninsula for the 47th time? 🔥
             
-            But seriously—don’t leave us guessing like a pug tank pulling without buffs. We need your strength, your spark, and your beautiful brain 🧠.
+            ## 🌋 The Burning Crusade doesn't wait for stragglers!
+
+            Illidan didn't declare "YOU ARE NOT PREPARED" just so you could prove him right by not showing up. We need your strength, your spark, and your beautiful brain to conquer Outland! 🧠
             
-            - ⚔️ Time’s ticking. The raid isn’t going to wait for the indecisive. Sign up now, or forever explain to your gear why it’s still blue.
-            - 📅 Check the calendar, pick your spot, and let’s bring the pain (and maybe some cookies).
-            - 🔗 [Sign up here](<https://www.everlastingvendetta.com/raid/{{{targetData.raidId}}}>)
+            - ⚔️ **Time's ticking faster than a rogue vanishing on a wipe.** The Dark Portal won't keep the invasion waiting. Sign up now, or forever explain to your gear why it's still quest greens.
+            - 🕐 **The raid roster isn't going to fill itself!** We've got demons to slay, loot to distribute, and bosses to make regret their existence.
+            - 📅 **Check the calendar, claim your spot**, and let's show these TBC raid bosses that Vendetta came prepared (unlike that one guy...).
+            - 🔗 [**Sign up here before it's too late!**](<https://www.everlastingvendetta.com/raid/{{{targetData.raidId}}}>)
             
-            🐙 With an ominous tentacle wiggle,
-            Vendetto, your emotionally unstable raid octopus
+            Remember: In the words of the wise prophet of Outland—*"You are not prepared"*... but you COULD be, if you just clicked that signup button! 🎯
+
+            *May the Light of A'dal guide you to the raid roster,*
+            ## 🐙 Vendetto
+            *Your fel-corrupted, emotionally unstable raid octopus*
+            *Swimming through Serpentshrine since TBC Classic*
             `
         }
     })
 
-    /*const {successful, failed} = await delivery.send();
+    const {successful, failed} = await delivery.send();
 
     console.log(`Delivery ${communicationCode} successful:`, successful.length);
-    console.log(`Delivery ${communicationCode} failed:`, failed.length);*/
+    console.log(`Delivery ${communicationCode} failed:`, failed.length);
 }

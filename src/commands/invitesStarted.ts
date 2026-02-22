@@ -1,11 +1,12 @@
-import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
-import {hasFeature} from "../util/features";
-import {getUserRoles} from "../util/userPermissions";
-import {createServerComponentClient} from "../supabase";
-import {createDelivery} from "../delivery";
-import {findDeliveryByName} from "../util/findDeliveryByName";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { hasFeature } from "../util/features";
+import { getUserRoles } from "../util/userPermissions";
+import { createServerComponentClient } from "../supabase";
+import { createDelivery } from "../delivery";
+import { findDeliveryByName } from "../util/findDeliveryByName";
 
 const allowedRoles = [
+    'ADMIN',
     'GUILD_MASTER',
     'RAID_LEADER',
     'LOOT_MASTER',
@@ -63,9 +64,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         });
         return;
     }
-    const startDate = new Date(reset.raid_date + ' ' + reset.time);
-    const endDate = new Date(reset.end_date + ' ' + reset.end_time);
-    const now = new Date();
+
+    const startDate = new Date(new Date(reset.raid_date + ' ' + reset.time).toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+    const endDate = new Date(new Date(reset.end_date + ' ' + reset.end_time).toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
 
     if (now > endDate) {
         await interaction.reply({
@@ -78,9 +80,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     if (now < startDate) {
         const diff = startDate.getTime() - now.getTime();
         const diffMinutes = Math.floor(diff / 1000 / 60);
-        if (diffMinutes > 60) {
+        if (diffMinutes > 120) {
             await interaction.reply({
-                content: 'This reset is more than 1 hour away',
+                content: 'This reset is more than 2 hour away',
                 ephemeral: true,
             });
             return;
@@ -101,11 +103,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const delivery = await createDelivery({
         id: deliveryId,
         client: interaction.client,
-        target: participants.map(p => ({discordId: p.id})),
-        targetData: {raidName: participants[0]?.raidName ?? '', resetId},
-        targetMapping: {targetName: 'user'},
+        target: participants.map(p => ({ discordId: p.id })),
+        targetData: { raidName: participants[0]?.raidName ?? '', resetId },
+        targetMapping: { targetName: 'user' },
         message: {
-            targetMapping: {targetName: 'user'},
+            targetMapping: { targetName: 'user' },
             content: `# 🔔 Splish Splash! Invites Started! 🔔
             
             Hey {{{user.displayName}}}, it's me, Vendetto, your favorite eight-armed friend! 🐙
@@ -117,7 +119,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             
             
             Quick reminder: Don't forget to review your Soft Reserves (SRs) 
-            here 👉 [Review SRs](https://www.everlastingvendetta.com/raid/{{{targetData.resetId}}}/soft-reserv)`
+            here 👉 [Review SRs](<https://www.everlastingvendetta.com/raid/{{{targetData.resetId}}}/soft-reserv>)`
         }
     })
     const results = await delivery.send()
@@ -128,7 +130,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     responseMessage += `✅ Successfully notified: ${results.successful.length} members`
 
     if (results.failed.length > 0) {
-        const names = results.failed.map((user, i, arr) => `<@${user}>${i === arr.length-2 ? ' and ' : ''}`).join(', ')
+        const names = results.failed.map((user, i, arr) => `<@${user}>${i === arr.length - 2 ? ' and ' : ''}`).join(', ')
         responseMessage += `
         HEY!, ${names} the invites started! 🎉.
         BTW, I couldn't reach you! But don't worry, I'm not mad! Just a little disappointed. 😢
@@ -145,7 +147,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
 async function findRaidReset(resetId: string) {
     const supabase = createServerComponentClient()
-    const {data: reset, error} = await supabase
+    const { data: reset, error } = await supabase
         .from('raid_resets')
         .select('id, name, raid:ev_raid(name, id), raid_date, end_date, time, end_time')
         .eq('id', resetId)
@@ -172,7 +174,7 @@ async function findRaidReset(resetId: string) {
 
 async function findParticipants(resetId: string) {
     const supabase = createServerComponentClient()
-    const {data: participants, error} = await supabase
+    const { data: participants, error } = await supabase
         .from('ev_raid_participant')
         .select('member_id, raid:raid_resets!inner(name, raid_date)')
         .eq('raid_id', resetId)
@@ -190,7 +192,7 @@ async function findParticipants(resetId: string) {
         return []
     }
 
-    const {data: discordUsers, error: discordError} = await supabase
+    const { data: discordUsers, error: discordError } = await supabase
         .from('discord_members')
         .select('*')
         .in('member_id', participants.map(p => p.member_id))
