@@ -30,21 +30,30 @@ export function setupWorkflows(client: Client) {
     })
 
     setInterval(() => {
-        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
-        const day = now.getDay(); // 0 is Sunday
-        const hour = now.getHours(); // 0-23
-        const minute = now.getMinutes(); // 0-59
-        const month = now.getMonth(); // 0 is January
-
         const events = workflows.filter((event) => {
-            const eventDate = new Date(event.time);
+            const tz = event.timezone || "Europe/Madrid";
+
+            const localNowString = new Date().toLocaleString("en-US", { timeZone: tz }).replace(/\u202F/g, ' ');
+            const now = new Date(localNowString);
+            
+            const day = now.getDay(); // 0 is Sunday
+            const hour = now.getHours(); // 0-23
+            const minute = now.getMinutes(); // 0-59
+            const month = now.getMonth(); // 0 is January
+
+
+            const cleanEventTime = event.time.replace('Z', '');
+            const eventDate = new Date(cleanEventTime);
             if (isNaN(eventDate.getTime())) {
                 console.error('Invalid date format for event:', event.time, event.name);
                 return false;
             }
+
+            const timeMatch = cleanEventTime.match(/T(\d{2}):(\d{2})/);
+            const eventHour = timeMatch ? parseInt(timeMatch[1], 10) : eventDate.getHours();
+            const eventMinute = timeMatch ? parseInt(timeMatch[2], 10) : eventDate.getMinutes();
+
             const eventDay = eventDate.getDay();
-            const eventHour = eventDate.getHours();
-            const eventMinute = eventDate.getMinutes();
             const eventMonth = eventDate.getMonth(); // 0 is January
 
             if (event.type === 'daily' && hour === eventHour && minute === eventMinute) {
@@ -60,11 +69,11 @@ export function setupWorkflows(client: Client) {
             } else if (event.type === 'hourly' && minute === eventMinute) {
                 return true
             }
+            return false;
         });
 
         if (events.length === 0) {
-            console.log('No events to execute on', `{ hour: ${hour}, minute: ${minute}, day: ${day}, month: ${month} }`)
-            return
+            return;
         }
 
         console.log('Executing events: ', events.map((event) => event.name).join(', '))

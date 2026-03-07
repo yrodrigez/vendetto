@@ -44,14 +44,26 @@ for (const file of fs.readdirSync(eventsPath).filter(file => file.endsWith('.ts'
 
 
 const workflowsPath = path.join(__dirname, 'workflows');
-for (const file of fs.readdirSync(workflowsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'))) {
-    const workflow = require(path.join(workflowsPath, file));
-    if (workflow.scheduler) {
-        addWorkflow({
-            name: workflow.name,
-            execute: workflow.execute,
-            ...workflow.scheduler
-        });
+for (const file of fs.readdirSync(workflowsPath)) {
+    const fullPath = path.join(workflowsPath, file);
+    const isDir = fs.statSync(fullPath).isDirectory();
+
+    if (isDir || file.endsWith('.ts') || file.endsWith('.js')) {
+        try {
+            const workflow = require(fullPath);
+            if (workflow.scheduler) {
+                addWorkflow({
+                    name: workflow.name,
+                    execute: workflow.execute,
+                    ...workflow.scheduler
+                });
+            }
+            console.log('Loaded workflow:', workflow.name);
+        } catch (error: any) {
+            if (error.code !== 'MODULE_NOT_FOUND') {
+                console.error(`Error loading workflow at ${fullPath}:`, error);
+            }
+        }
     }
 }
 
