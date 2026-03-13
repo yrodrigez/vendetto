@@ -6,6 +6,13 @@ interface Feature {
 
 const getAllFeatures = function () {
     return {
+        updateNicknameToCharacterNickname: {
+            enabled: true,
+            description:
+                'Update Discord nickname to match the character name',
+            name:
+                Symbol('updateNicknameToCharacterNickname')
+        },
         sendPrivateMessage: {
             enabled: true,
             description:
@@ -42,7 +49,7 @@ const getAllFeatures = function () {
             name:
                 Symbol('raidInvitesNotifications')
         },
-        campaigns:{
+        campaigns: {
             enabled: true,
             description:
                 'Campaigns',
@@ -84,6 +91,7 @@ const getEnabledFeatures = (guildId: string) => {
             features.announceConnection.enabled = false;
             features.syncGuildMembers.enabled = true;
             features.raidInvitesNotifications.enabled = true;
+            features.campaigns.enabled = true;
             break;
         case 'dev':
             features.raidNotifications.enabled = false;

@@ -30,6 +30,6 @@ function validateEnvironment(env: any) {
 }
 
 validateEnvironment(environment);
-export const getEnvironmentVariable = () => {
+export const getEnvironment = () => {
     return environment;
 }

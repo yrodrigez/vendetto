@@ -1,4 +1,6 @@
-class RateLimitedThreadPool {
+
+
+export class RateLimitedThreadPool {
     private readonly limit: number;
     private readonly interval: number;
     private queue: Array<{
@@ -44,9 +46,14 @@ class RateLimitedThreadPool {
 
                 // Run all tasks in the batch concurrently
                 await Promise.all(
-                    batch.map(({ task, resolve, reject }) =>
-                        task().then(resolve).catch(reject)
-                    )
+                    batch.map(async ({ task, resolve, reject }) => {
+                        try {
+                            const result = await task();
+                            resolve(result);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    })
                 );
 
                 // If there are remaining tasks, wait for the interval
@@ -56,7 +63,7 @@ class RateLimitedThreadPool {
             }
         } catch (error) {
             console.error('Thread pool encountered an error:', error);
-            throw error // Propagate the error to the caller
+            // No need to throw error, the queue processing should gracefully terminate and be restarted on next submit
         } finally {
             this.running = false;
         }
@@ -70,4 +77,5 @@ class RateLimitedThreadPool {
     }
 }
 
-export default RateLimitedThreadPool;
+const RateLimitedThreadPoolSingleton = new RateLimitedThreadPool(5, 5000); // 5 tasks per 5 seconds
+export default RateLimitedThreadPoolSingleton;

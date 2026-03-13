@@ -1,6 +1,6 @@
-import {describe, expect, test, beforeEach, jest} from '@jest/globals';
+import { describe, expect, test, beforeEach, jest } from '@jest/globals';
 import Mustache from 'mustache';
-import {personalize} from '../../delivery/personalize';
+import { personalize } from '../../domain/delivery/services/personalize';
 
 // Mock Mustache
 jest.mock('mustache');
@@ -18,8 +18,8 @@ describe('personalize', () => {
             personalize({
                 memberData: null as any,
                 targetData: {},
-                message: {content: 'Hello!', targetMapping: {targetName: 'user'}},
-                targetMapping: {targetName: 'user'}
+                message: { content: 'Hello!', targetMapping: { targetName: 'user' } },
+                targetMapping: { targetName: 'user' }
             });
         }).toThrow('Invalid member data');
     });
@@ -29,8 +29,8 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: null as any,
-                message: {content: 'Hello!', targetMapping: {targetName: 'user'}},
-                targetMapping: {targetName: 'user'}
+                message: { content: 'Hello!', targetMapping: { targetName: 'user' } },
+                targetMapping: { targetName: 'user' }
             });
         }).toThrow('Invalid target data');
     });
@@ -40,8 +40,8 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: {},
-                message: {content: 'Hello!', targetMapping: {targetName: 'user'}},
-                targetMapping: {targetName: ''}
+                message: { content: 'Hello!', targetMapping: { targetName: 'user' } },
+                targetMapping: { targetName: '' }
             });
         }).toThrow('Invalid target mapping');
     });
@@ -51,8 +51,8 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: {},
-                message: {content: null as any, targetMapping: {targetName: 'user'}},
-                targetMapping: {targetName: 'user'}
+                message: { content: null as any, targetMapping: { targetName: 'user' } },
+                targetMapping: { targetName: 'user' }
             });
         }).toThrow('Invalid message content');
     });
@@ -61,18 +61,18 @@ describe('personalize', () => {
         (Mustache.render as jest.Mock).mockReturnValueOnce('Hello John!');
 
         const result = personalize({
-            memberData: {name: 'John'},
+            memberData: { name: 'John' },
             targetData: {},
-            message: {content: 'Hello {{#user}}{{name}}{{/user}}!', targetMapping: {targetName: 'user'}},
-            targetMapping: {targetName: 'user'}
+            message: { content: 'Hello {{#user}}{{name}}{{/user}}!', targetMapping: { targetName: 'user' } },
+            targetMapping: { targetName: 'user' }
         });
 
-        expect(result).toEqual({content: 'Hello John!', targetMapping: {targetName: 'user'}});
+        expect(result).toEqual({ content: 'Hello John!', targetMapping: { targetName: 'user' } });
         expect(Mustache.render).toHaveBeenCalledWith(
             'Hello {{#user}}{{name}}{{/user}}!',
             {
                 targetData: {},
-                user: {name: 'John'}
+                user: { name: 'John' }
             }
         );
     });
@@ -81,18 +81,18 @@ describe('personalize', () => {
         (Mustache.render as jest.Mock).mockReturnValueOnce('Hello John!');
 
         const result = personalize({
-            memberData: {name: 'John'},
+            memberData: { name: 'John' },
             targetData: {},
-            message: {content: 'Hello {{{user.name}}}!', targetMapping: {targetName: 'user'}},
-            targetMapping: {targetName: 'user'}
+            message: { content: 'Hello {{{user.name}}}!', targetMapping: { targetName: 'user' } },
+            targetMapping: { targetName: 'user' }
         });
 
-        expect(result).toEqual({content: 'Hello John!', targetMapping: {targetName: 'user'}});
+        expect(result).toEqual({ content: 'Hello John!', targetMapping: { targetName: 'user' } });
         expect(Mustache.render).toHaveBeenCalledWith(
             'Hello {{{user.name}}}!',
             {
                 targetData: {},
-                user: {name: 'John'}
+                user: { name: 'John' }
             }
         );
     });
@@ -104,8 +104,8 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: {},
-                message: {content: 'Long message', targetMapping: {targetName: 'user'}},
-                targetMapping: {targetName: 'user'}
+                message: { content: 'Long message', targetMapping: { targetName: 'user' } },
+                targetMapping: { targetName: 'user' }
             });
         }).toThrow("Message content exceeds Discord's maximum character limit");
     });
@@ -115,18 +115,18 @@ describe('personalize', () => {
         (Mustache.render as jest.Mock).mockReturnValueOnce('Hello John, you are invited to Birthday Party');
 
         const result = personalize({
-            memberData: {name: 'John'},
-            targetData: {partyName: 'Birthday Party'},
-            message: {content: template, targetMapping: {targetName: 'user'}},
-            targetMapping: {targetName: 'user'}
+            memberData: { name: 'John' },
+            targetData: { partyName: 'Birthday Party' },
+            message: { content: template, targetMapping: { targetName: 'user' } },
+            targetMapping: { targetName: 'user' }
         });
 
-        expect(result).toEqual({content: 'Hello John, you are invited to Birthday Party', targetMapping:{targetName: 'user'}});
+        expect(result).toEqual({ content: 'Hello John, you are invited to Birthday Party', targetMapping: { targetName: 'user' } });
         expect(Mustache.render).toHaveBeenCalledWith(
             template,
             {
-                targetData: {partyName: 'Birthday Party'},
-                user: {name: 'John'}
+                targetData: { partyName: 'Birthday Party' },
+                user: { name: 'John' }
             }
         );
     });
@@ -140,8 +140,8 @@ describe('personalize', () => {
             personalize({
                 memberData: {},
                 targetData: {},
-                message: {content: 'Invalid {{template', targetMapping: {targetName: 'user'}},
-                targetMapping: {targetName: 'user'}
+                message: { content: 'Invalid {{template', targetMapping: { targetName: 'user' } },
+                targetMapping: { targetName: 'user' }
             });
         }).toThrow('Template rendering failed: Mustache error');
     });

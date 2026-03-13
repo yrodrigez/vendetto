@@ -1,7 +1,7 @@
-import {Events, Client, ChannelType, TextChannel} from 'discord.js';
-import {hasFeature} from "../util/features";
+import { Events, Client, ChannelType, TextChannel } from 'discord.js';
+import { hasFeature } from "../util/features";
 
-module.exports = {
+export const readyEvent = {
     name: Events.ClientReady,
     once: true,
     async execute(client: Client) {
@@ -18,7 +18,7 @@ module.exports = {
 
         for (const guild of guilds.values()) {
             const channel = guild.channels.cache.find(channel => {
-                return channel.type === ChannelType.GuildText && (channel.name === 'announcements' || channel.name === 'general');
+                return channel.type === ChannelType.GuildText && (channel.name === 'vendetto-system');
             }) as TextChannel | undefined;
 
             if (channel && channel.send) {

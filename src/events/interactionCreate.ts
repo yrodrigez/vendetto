@@ -1,7 +1,6 @@
-// src/events/interactionCreate.ts
-import {Interaction, Events} from "discord.js";
+import { Interaction, Events } from "discord.js";
 
-module.exports = {
+export const interactionCreateEvent = {
     name: Events.InteractionCreate,
     once: false,
     execute(interaction: Interaction) {

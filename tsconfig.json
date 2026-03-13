@@ -6,12 +6,19 @@
     "esModuleInterop": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "strict": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["jest"]
   },
+
   "include": ["src/**/*.ts", "src/**/*"],
   "exclude": ["node_modules"]
 }

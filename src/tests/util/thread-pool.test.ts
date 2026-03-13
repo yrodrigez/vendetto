@@ -1,4 +1,4 @@
-import RateLimitedThreadPool from '../../util/thread-pool';
+import { RateLimitedThreadPool } from '../../util/thread-pool';
 
 describe('RateLimitedThreadPool', () => {
     beforeEach(() => {
@@ -94,7 +94,7 @@ describe('RateLimitedThreadPool', () => {
         const failPromise = pool.submit(failingTask);
         const successPromise = pool.submit(successTask);
 
-        failPromise.catch(() => {/* intentionally empty */});
+        failPromise.catch(() => {/* intentionally empty */ });
 
         await jest.runAllTimersAsync();
 

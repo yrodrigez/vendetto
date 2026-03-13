@@ -1,10 +1,10 @@
 
 import {type SupabaseClient, createClient as createServerClient} from "@supabase/supabase-js";
-import { getEnvironmentVariable } from "../infrastructure/environment";
+import { getEnvironment } from "../infrastructure/environment";
 
 export function createServerComponentClient(options?: { schema: string }): SupabaseClient {
 
-    const environment = getEnvironmentVariable();
+    const environment = getEnvironment();
 
     return createServerClient(
         environment.supabaseUrl,
