@@ -11,6 +11,7 @@ import { DiscordNicknameCandidateRepository } from "@/infrastructure/persistance
 import { RaidReminderCandidateRepository } from "@/infrastructure/persistance/repositories/raid-reminder-candidate/raid-reminder-candidate.repository";
 import { WorkflowSchedulerRepository } from "@/infrastructure/persistance/repositories/workflows/workflow-scheduler.repository";
 import { WorkflowsRepository } from "@/infrastructure/persistance/repositories/workflows/workflows.repository";
+import { RaidSignupNotifierRepository } from "@/infrastructure/persistance/repositories/raid-signup-notifier/raid-signup-notifier.repository";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -26,6 +27,7 @@ export function createContainer() {
     const urlRepo = new SupabaseUrlRepository();
     const discordAdapter = new DiscordDeliveryAdapter();
     const processDeliveryUseCase = new ProcessDeliveryUseCase(discordAdapter, broadlogRepo, urlRepo);
+    const raidSignupNotifierRepository = new RaidSignupNotifierRepository(databaseClient);
 
 
     return {
@@ -41,6 +43,7 @@ export function createContainer() {
         processDeliveryUseCase,
         broadlogRepo,
         urlRepo,
-        discordAdapter
+        discordAdapter,
+        raidSignupNotifierRepository
     }
 }

@@ -4,6 +4,7 @@ import { getGuilds } from "@/infrastructure/discord/discord-api.adapter";
 import { createContainer } from "./workflows-container";
 import { RaidReminderWorkflow } from "@/application/workflows/raid-reminder/raid-reminder.workflow";
 import seedList from "@/seeds";
+import { RaidSignupNotifierWorkflow } from "@/application/workflows/raid-signup-notifier/raid-signup-notifier.workflow";
 
 
 export async function startWorkflows() {
@@ -14,11 +15,9 @@ export async function startWorkflows() {
         workflowSchedulerRepository,
         guildFeaturePolicyService,
         logger,
-        raidReminderCandidateRepository,
         processDeliveryUseCase,
-        broadlogRepo,
-        urlRepo,
-        discordAdapter
+        raidSignupNotifierRepository,
+        raidReminderCandidateRepository
     } = createContainer()
 
     const guilds = await getGuilds()
@@ -40,7 +39,7 @@ export async function startWorkflows() {
         }
 
         if (guildFeaturePolicyService.isFeatureEnabled(guild.id, "raidNotifications")) {
-            const workflow = new RaidReminderWorkflow(
+            const raidReminderWorkflow = new RaidReminderWorkflow(
                 raidReminderCandidateRepository,
                 processDeliveryUseCase,
                 logger,
@@ -48,9 +47,18 @@ export async function startWorkflows() {
                 workflowSchedulerRepository,
                 guild.id
             )
+            await scheduler.registerWorkflow(raidReminderWorkflow, { guildId: guild.id, seedList })
+            console.log(`Registered workflow "${raidReminderWorkflow.name}" for guild ${guild.id}`)
 
-            await scheduler.registerWorkflow(workflow, { guildId: guild.id, seedList })
-            console.log(`Registered workflow "${workflow.name}" for guild ${guild.id}`)
+            const raidSignupNotifierWorkflow = new RaidSignupNotifierWorkflow(
+                raidSignupNotifierRepository,
+                processDeliveryUseCase,
+                workflowRepository,
+                workflowSchedulerRepository,
+                guild.id
+            )
+            await scheduler.registerWorkflow(raidSignupNotifierWorkflow, { seedList })
+            console.log(`Registered workflow "${raidSignupNotifierWorkflow.name}" for guild ${guild.id}`)
         }
     }
 

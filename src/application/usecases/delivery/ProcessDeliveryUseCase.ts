@@ -63,9 +63,7 @@ export class ProcessDeliveryUseCase {
             })))).filter((message) => message !== null) as { user: any, message: Message, urls: { url: string, id: string }[] }[]
 
         const personalizationEnd = Date.now()
-        console.log(personalizedMessages[0]?.message, `Personalization finished on: ${personalizationEnd - start}ms`, 'total: ', personalizedMessages.length,
-            'will notify: ', personalizedMessages.map((message) => message.user.globalName || message.user.username || message.user.id).join(', ')
-        )
+        console.log(personalizedMessages[0]?.message, `Personalization finished on: ${personalizationEnd - start}ms`, 'total: ', personalizedMessages.length)
 
         const results = {
             successful: [] as string[],
@@ -77,7 +75,6 @@ export class ProcessDeliveryUseCase {
             return results
         }
 
-        console.log('SENDING MESSAGES IN 5 SECONDS', personalizedMessages)
         if (!options?.removeDelay) {
             await new Promise(resolve => setTimeout(resolve, 5000))
         }
@@ -123,7 +120,6 @@ export class ProcessDeliveryUseCase {
                 }])
 
                 if (!broadlogIds?.length) return
-                console.log(urls)
                 await Promise.all((urls ?? []).map(async ({ id: urlId }) => {
                     const broadlogId = broadlogIds[0]?.id
                     if (broadlogId) {
