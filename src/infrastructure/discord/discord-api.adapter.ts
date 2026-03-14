@@ -9,7 +9,8 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildIntegrations
+        GatewayIntentBits.GuildIntegrations,
+        GatewayIntentBits.GuildPresences,
     ]
 });
 let loginPromise: Promise<string> | null = null;
