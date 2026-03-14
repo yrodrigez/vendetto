@@ -1,7 +1,7 @@
-import { createServerComponentClient } from "../../../supabase";
-import { IBroadlogRepositoryPort, BroadlogData } from "../../../application/ports/delivery/IBroadlogRepositoryPort";
+import { createServerComponentClient } from "@/supabase";
+import { BroadlogRepositoryPort, BroadlogData } from "@/application/ports/outbound/delivery/broadlog-repository.port";
 
-export class SupabaseBroadlogRepository implements IBroadlogRepositoryPort {
+export class SupabaseBroadlogRepository implements BroadlogRepositoryPort {
     async saveBroadlog(deliveryId: number, data: BroadlogData[]): Promise<{ broadlogIds?: { id: string }[], error?: any }> {
         const supabase = createServerComponentClient({ schema: 'open_campaign' })
 

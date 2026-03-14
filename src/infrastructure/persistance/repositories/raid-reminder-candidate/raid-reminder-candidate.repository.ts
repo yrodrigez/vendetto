@@ -4,6 +4,7 @@ import {
     IRaidReminderCandidateRepositoryPort,
     RaidReminderCandidate
 } from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
+import { DatabaseClient } from "@/infrastructure/database/db";
 
 function raidReminderCandidateMapper(raidReminderCandidate: any): RaidReminderCandidate {
     return {
@@ -16,16 +17,13 @@ function raidReminderCandidateMapper(raidReminderCandidate: any): RaidReminderCa
     }
 }
 export class RaidReminderCandidateRepository implements IRaidReminderCandidateRepositoryPort {
-    constructor(private databaseClient: any) { }
+    constructor(private databaseClient: DatabaseClient) { }
 
-    async findAll({ activeFrom, alreadyNotifiedCode, alreadyNotifiedDelay, timezone }: { activeFrom: string, alreadyNotifiedCode: string, alreadyNotifiedDelay: string, timezone: string } = {
-        activeFrom: '21 days',
-        alreadyNotifiedCode: 'raidReminder',
-        alreadyNotifiedDelay: '2 days',
-        timezone: 'Europe/Madrid'
+    async findAll({ communicationCode, }: { communicationCode: string } = {
+        communicationCode: 'raidReminder',
     }) {
         const query = readResourceFile(__dirname, '/raid-reminder-candidate.sql');
-        const results = await this.databaseClient.query(query, [activeFrom, alreadyNotifiedCode, alreadyNotifiedDelay, timezone]);
+        const results = await this.databaseClient.query(query, [communicationCode]);
         return results.map(raidReminderCandidateMapper);
     }
 }

@@ -6,6 +6,7 @@ export class GuildFeaturePolicyService {
     constructor(
         private readonly guildSubscriptionService: GuildSubscriptionService = new GuildSubscriptionService(),
         private readonly freeFeatures: FeatureName[] = [
+            'announceConnection',
             'updateNicknameToCharacterNickname',
             'syncGuildMembers'
         ],

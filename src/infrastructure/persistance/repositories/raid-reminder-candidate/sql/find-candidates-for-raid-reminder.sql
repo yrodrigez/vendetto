@@ -6,15 +6,33 @@ WITH recent_active_members AS (
        OR m.created_at >= NOW() - $1::interval ) AND m.is_selected = true
 )
 , next_upcoming_raid AS (
-    SELECT rr.id, r.name, rr.raid_date, rr.time
+    SELECT 
+    rr.id, 
+    r.name, 
+    rr.raid_date, 
+    rr.time,
+    (rr.raid_date + rr.time) AS raid_datetime
     FROM public.raid_resets rr
     INNER JOIN public.ev_raid r ON r.id = rr.raid_id
-    WHERE (raid_date+time) > NOW() + '2 hours'::interval
+    WHERE (raid_date+time) > NOW() + '12 hours'::interval
       AND (raid_date+time) < NOW() + '1 week'::interval
       AND (status IS NULL OR (status != 'offline' AND status != 'locked'))
       AND (r.size > (SELECT count(1) FROM public.ev_raid_participant rp WHERE rp.raid_id = rr.id))
     ORDER BY (raid_date+time)
     LIMIT 1
+)
+, next_reset_boundary AS (
+    SELECT
+        nur.raid_datetime,
+        CASE
+            WHEN extract(isodow from nur.raid_datetime) < 3 THEN
+                date_trunc('day', nur.raid_datetime)
+                + make_interval(days => (3 - extract(isodow from nur.raid_datetime))::int)
+            ELSE
+                date_trunc('day', nur.raid_datetime)
+                + make_interval(days => (10 - extract(isodow from nur.raid_datetime))::int)
+        END AS next_reset_datetime
+    FROM next_upcoming_raid nur
 )
 , next_raid_signups AS (
     SELECT DISTINCT member_id
@@ -29,6 +47,17 @@ WITH recent_active_members AS (
       AND created_at::date >= NOW() - $3::interval
       AND last_event = 'success'
 )
+, user_registered_in_raid_until_next_reset AS (
+  SELECT DISTINCT rp.member_id
+    FROM public.ev_raid_participant rp
+    JOIN public.raid_resets rr ON rp.raid_id = rr.id
+    JOIN public.ev_raid r ON r.id = rr.raid_id
+    CROSS JOIN next_upcoming_raid nur
+    CROSS JOIN next_reset_boundary nrb
+    WHERE r.name = nur.name
+      AND (rr.raid_date + rr.time) > nur.raid_datetime
+      AND (rr.raid_date + rr.time) < nrb.next_reset_datetime
+)
 SELECT op.provider_user_id as discord_id,
         am.character->>'name' as name,
         0 as account_id,
@@ -41,6 +70,7 @@ CROSS JOIN next_upcoming_raid r
 WHERE op.provider_user_id NOT IN (SELECT "to" FROM already_notified)
   AND am.member_id NOT IN (SELECT member_id FROM next_raid_signups)
   AND op.provider LIKE '%discord%'
+  AND am.member_id NOT IN (SELECT member_id FROM user_registered_in_raid_until_next_reset)
 UNION
 SELECT DISTINCT dm.discord_user_id AS discord_id,
                 m.character ->> 'name' AS name,
@@ -54,4 +84,5 @@ JOIN public.ev_member m ON dm.member_id = m.id
 WHERE m.id IN (SELECT member_id FROM recent_active_members)
   AND m.id NOT IN (SELECT member_id FROM next_raid_signups)
   AND dm.discord_user_id NOT IN (SELECT "to" FROM already_notified)
+  AND m.id NOT IN (SELECT member_id FROM user_registered_in_raid_until_next_reset)
 ORDER BY name;

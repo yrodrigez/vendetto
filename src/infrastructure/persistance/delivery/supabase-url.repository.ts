@@ -1,5 +1,5 @@
-import { createServerComponentClient } from "../../../supabase";
-import { IUrlRegistrationPort } from "../../../application/ports/delivery/IUrlRegistrationPort";
+import { createServerComponentClient } from "@/supabase";
+import { IUrlRegistrationPort } from "@/application/ports/outbound/delivery/url-registration.port";
 import crypto from 'crypto';
 
 function generateShortCode(length = 6) {

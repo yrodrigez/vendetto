@@ -1,8 +1,8 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { DiscordCommand } from "../../infrastructure/discord/commands/command.interface";
 import { InvitesStartedWorkflow } from "@/application/workflows/invites-started/invites-started.workflow";
-import { hasFeature } from "@/util/features";
-import { getUserRoles } from "@/util/userPermissions";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { DiscordCommand } from "@/infrastructure/discord/commands/command.interface";
+import { GuildFeaturePolicyService } from "@/application/features/guild-feature-policy.service";
+import { MemberRolesRepository } from "@/infrastructure/persistance/repositories/member-roles/member-roles.repository";
 
 const allowedRoles = [
     'ADMIN',
@@ -22,7 +22,9 @@ export class InvitesStartedCommand implements DiscordCommand {
         );
 
     constructor(
-        private readonly workflow: InvitesStartedWorkflow
+        private readonly workflow: InvitesStartedWorkflow,
+        private readonly guildFeaturePolicyService: GuildFeaturePolicyService,
+        private readonly roleRepository: MemberRolesRepository
     ) { }
 
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -33,7 +35,7 @@ export class InvitesStartedCommand implements DiscordCommand {
             return;
         }
 
-        if (!hasFeature('raidInvitesNotifications', guildId)) {
+        if (!this.guildFeaturePolicyService.isFeatureEnabled(guildId, 'raidInvitesNotifications')) {
             await interaction.reply({
                 content: 'This feature is not available for your server',
                 ephemeral: true,
@@ -51,7 +53,7 @@ export class InvitesStartedCommand implements DiscordCommand {
         }
 
         const userId = interaction.user.id;
-        const roles = await getUserRoles(userId);
+        const roles = await this.roleRepository.findRolesForMember(userId);
         const hasRole = roles.some(role => allowedRoles.includes(role));
         if (!hasRole) {
             await interaction.reply({

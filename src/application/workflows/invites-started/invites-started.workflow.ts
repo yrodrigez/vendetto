@@ -1,9 +1,9 @@
+import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/delivery-repository.port";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
 import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
 import { ProcessDeliveryUseCase } from "@/application/usecases/delivery/ProcessDeliveryUseCase";
 import { Retryable, Step, WorkflowName, WorkflowWithRetries } from "@/application/workflows/workflow";
 import { RaidResetRepository } from "@/domain/raid/raid-reset.repository";
-import { findDeliveryByName } from "@/util/findDeliveryByName";
 
 export type InvitesStartedWorkflowInput = {
     resetId: string;
@@ -16,10 +16,12 @@ export class InvitesStartedWorkflow extends WorkflowWithRetries<InvitesStartedWo
     constructor(
         private readonly raidResetRepository: RaidResetRepository,
         private readonly processDeliveryUseCase: ProcessDeliveryUseCase,
-        workflowRepository: WorkflowRunRepositoryPort,
-        schedulerRepository: WorkflowSchedulerRepositoryPort
+        readonly workflowRepository: WorkflowRunRepositoryPort,
+        readonly schedulerRepository: WorkflowSchedulerRepositoryPort,
+        readonly guildId: string,
+        readonly deliveryRepository: DeliveryRepositoryPort
     ) {
-        super(workflowRepository, schedulerRepository);
+        super(workflowRepository, schedulerRepository, guildId);
     }
 
     @Step('validate-reset', 0)
@@ -73,7 +75,11 @@ export class InvitesStartedWorkflow extends WorkflowWithRetries<InvitesStartedWo
             characterName: p.characterName || 'Champion'
         }));
 
-        const deliveryId = await findDeliveryByName('invitesStarted');
+        const delivery = await this.deliveryRepository.findDeliveryByName('invitesStarted');
+        if (!delivery) {
+            throw new Error('Delivery not found');
+        }
+        const deliveryId = delivery.id;
 
         const content = `*blub...* 🐙
             

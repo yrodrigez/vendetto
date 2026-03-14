@@ -55,7 +55,8 @@ export abstract class Workflow<TInput> {
 
     constructor(
         protected readonly workflowRepository: WorkflowRunRepositoryPort,
-        protected input: TInput = {} as TInput
+        protected input: TInput = {} as TInput,
+        protected readonly context: string
     ) { }
 
     get name(): string {
@@ -76,8 +77,8 @@ export abstract class Workflow<TInput> {
         throw new Error(`Workflow "${this.name}" has no workflowId. Use WorkflowWithSchedule or set workflowId manually.`)
     }
 
-    async execute(params: TInput): Promise<void> {
-        this.input = params
+    async execute(input: TInput): Promise<void> {
+        this.input = input
         const workflowId = await this.resolveWorkflowId()
         const execution = await this.workflowRepository.createExecution(workflowId, this.name)
 
@@ -95,7 +96,7 @@ export abstract class Workflow<TInput> {
                 status: 'failed',
                 error: error.message ?? String(error)
             })
-            console.error(`Workflow "${this.name}" failed:`, error)
+            throw error
         }
     }
 
@@ -121,9 +122,10 @@ export abstract class Workflow<TInput> {
 export abstract class WorkflowWithRetries<T> extends Workflow<T> {
     constructor(
         workflowRepository: WorkflowRunRepositoryPort,
-        protected readonly schedulerRepository: WorkflowSchedulerRepositoryPort
+        protected readonly schedulerRepository: WorkflowSchedulerRepositoryPort,
+        protected readonly context: string
     ) {
-        super(workflowRepository)
+        super(workflowRepository, {} as T, context)
     }
 
     private getRetryOptions(methodKey: string): RetryOptions | undefined {
@@ -135,7 +137,7 @@ export abstract class WorkflowWithRetries<T> extends Workflow<T> {
 
         // If a scheduler is provided, we use the workflow name as the permanent record
         if (this.schedulerRepository) {
-            const existing = await this.schedulerRepository.findByNameAndContext(this.name);
+            const existing = await this.schedulerRepository.findByNameAndContext(this.name, this.context);
             if (existing) {
                 this.workflowId = existing.id;
                 return existing.id;
@@ -193,14 +195,14 @@ export abstract class WorkflowWithRetries<T> extends Workflow<T> {
 }
 
 export abstract class WorkflowWithSchedule<T> extends WorkflowWithRetries<T> {
-    readonly context?: string
+    readonly context: string
 
     constructor(
         workflowRepository: WorkflowRunRepositoryPort,
         schedulerRepository: WorkflowSchedulerRepositoryPort,
-        context?: string
+        context: string
     ) {
-        super(workflowRepository, schedulerRepository)
+        super(workflowRepository, schedulerRepository, context)
         this.context = context
     }
 
@@ -216,7 +218,7 @@ export abstract class WorkflowWithSchedule<T> extends WorkflowWithRetries<T> {
         if (this.workflowId) return this.workflowId
         const record = await this.schedulerRepository!.findByNameAndContext(this.name, this.context)
         if (!record) {
-            throw new Error(`Workflow "${this.name}" (context: ${this.context ?? 'none'}) is not registered. Call register() first.`)
+            throw new Error(`Workflow "${this.name}" (context: ${this.context}) is not registered. Call register() first.`)
         }
         this.workflowId = record.id
         return record.id
@@ -227,8 +229,9 @@ export abstract class WorkflowWithSchedule<T> extends WorkflowWithRetries<T> {
         if (existing) {
             this.workflowId = existing.id
             await this.schedulerRepository!.updateNextExecution(existing.id, this.computeNextExecution())
-            await this.schedulerRepository!.upsert(this.name, this.schedule, 'running', this.context)
-            console.log(`Workflow "${this.name}" (context: ${this.context ?? 'none'}) already registered (id: ${existing.id}, status: ${existing.status})`)
+
+            await this.schedulerRepository!.upsert(this.name, this.schedule, this.schedule ? 'scheduled' : 'running', this.context)
+            console.log(`Workflow "${this.name}" (context: ${this.context}) already registered (id: ${existing.id}, status: ${existing.status})`)
             return
         }
 
@@ -236,7 +239,7 @@ export abstract class WorkflowWithSchedule<T> extends WorkflowWithRetries<T> {
         this.workflowId = record.id
         const nextExecution = this.computeNextExecution()
         await this.schedulerRepository!.updateNextExecution(record.id, nextExecution)
-        console.log(`Workflow "${this.name}" (context: ${this.context ?? 'none'}) registered (id: ${record.id}), next execution: ${nextExecution.toISOString()}`)
+        console.log(`Workflow "${this.name}" (context: ${this.context}) registered (id: ${record.id}), next execution: ${nextExecution.toISOString()}`)
     }
 
     async execute(params: T): Promise<void> {
@@ -244,8 +247,8 @@ export abstract class WorkflowWithSchedule<T> extends WorkflowWithRetries<T> {
 
         const id = await this.resolveWorkflowId()
         const nextExecution = this.computeNextExecution()
-        await this.schedulerRepository!.updateNextExecution(id, nextExecution)
-        console.log(`Workflow "${this.name}" next execution: ${nextExecution.toISOString()}`)
+        await this.schedulerRepository.updateNextExecution(id, nextExecution)
+        console.log(`Workflow "${this.name}" (context: ${this.context}) next execution: ${nextExecution.toISOString()}`)
     }
 
     computeNextExecution(): Date {

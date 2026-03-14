@@ -6,7 +6,7 @@ export interface BroadlogData {
     communication_code: string;
 }
 
-export interface IBroadlogRepositoryPort {
+export interface BroadlogRepositoryPort {
     saveBroadlog(deliveryId: number, data: BroadlogData[]): Promise<{ broadlogIds?: { id: string }[], error?: any }>;
     registerBroadlogIdInUrl(broadlogId: string, urlId: string): Promise<void>;
 }

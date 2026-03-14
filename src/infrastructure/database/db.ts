@@ -1,5 +1,5 @@
-import { postgresConfig } from "../../config";
-import { Pool } from 'pg'
+import { Pool } from 'pg';
+import { getEnvironment } from "../environment";
 
 const cleanEnvVar = (str?: string) =>
   (str ?? "").replace(/^"+|"+$/g, "").trim();
@@ -11,7 +11,7 @@ const {
   port,
   database,
   ssl
-} = postgresConfig;
+} = getEnvironment().postgres;
 
 if (!user || !password || !host || !port || !database) {
   throw new Error('Missing PostgreSQL configuration');

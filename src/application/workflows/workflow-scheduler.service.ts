@@ -1,6 +1,7 @@
 import cron, { ScheduledTask } from 'node-cron'
 import { WorkflowWithSchedule } from "@/application/workflows/workflow";
 import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { DiscordChannelLoggerPort } from '../ports/outbound/discord-channel-logger.port';
 
 type RegisteredWorkflow = {
     workflow: WorkflowWithSchedule<any>
@@ -11,7 +12,10 @@ type RegisteredWorkflow = {
 export class WorkflowSchedulerService {
     private readonly registry = new Map<string, RegisteredWorkflow>()
 
-    constructor(private readonly schedulerRepository: WorkflowSchedulerRepositoryPort) {}
+    constructor(
+        private readonly schedulerRepository: WorkflowSchedulerRepositoryPort,
+        private readonly logger: DiscordChannelLoggerPort
+    ) { }
 
     async registerWorkflow<T>(workflow: WorkflowWithSchedule<T>, defaultParams: T): Promise<void> {
         await workflow.register()
@@ -21,12 +25,13 @@ export class WorkflowSchedulerService {
                 console.log(`Executing workflow "${workflow.name}" (${workflow.workflowId})`)
                 await this.schedulerRepository.updateStatus(workflow.workflowId!, 'running')
                 await workflow.execute(defaultParams)
+            } catch (error: any) {
+                console.error(`Scheduled workflow "${workflow.name}" (${workflow.workflowId}) failed:`, error)
+                this.logger.log(workflow.context!, `Workflow "${workflow.name}" execution failed: ${error.message ?? String(error)}`)
+            } finally {
                 const nextExecution = workflow.computeNextExecution()
                 await this.schedulerRepository.updateNextExecution(workflow.workflowId!, nextExecution)
-            } catch (error) {
-                console.error(`Scheduled workflow "${workflow.name}" (${workflow.workflowId}) failed:`, error)
-            } finally {
-                await this.schedulerRepository.updateStatus(workflow.workflowId!, 'stopped').catch(() => {})
+                await this.schedulerRepository.updateStatus(workflow.workflowId!, 'scheduled').catch(() => { })
             }
         }, { timezone: 'Europe/Madrid' })
 

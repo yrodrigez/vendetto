@@ -1,7 +1,4 @@
-import { readResourceFile } from "@/util/file-resource-helper";
-import { User } from "discord.js";
-import moment from "moment";
-import { findDeliveryByName } from "@/util/findDeliveryByName";
+import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/delivery-repository.port";
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
 import { IRaidReminderCandidateRepositoryPort } from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
@@ -14,6 +11,9 @@ import {
     WorkflowName,
     WorkflowWithSchedule
 } from "@/application/workflows/workflow";
+import { readResourceFile } from "@/util/file-resource-helper";
+import { User } from "discord.js";
+import moment from "moment";
 
 export type RaidReminderInput = {
     seedList: User[] | string[];
@@ -32,7 +32,8 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
         private readonly logger: DiscordChannelLoggerPort,
         workflowRepository: WorkflowRunRepositoryPort,
         schedulerRepository: WorkflowSchedulerRepositoryPort,
-        context: string
+        context: string,
+        private readonly deliveryRepository: DeliveryRepositoryPort
     ) {
         super(workflowRepository, schedulerRepository, context);
         this.content = readResourceFile(__dirname, '/content.md');
@@ -49,10 +50,7 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
     @Retryable()
     async fetchCandidates() {
         const data = await this.candidateRepository.findAll({
-            activeFrom: '21 days',
-            alreadyNotifiedDelay: '2 days',
-            alreadyNotifiedCode: 'raidReminder',
-            timezone: 'Europe/Madrid'
+            communicationCode: 'raidReminder'
         });
 
         if (!data?.length) {
@@ -84,7 +82,11 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
             characterName: p.characterName,
         }));
 
-        const deliveryId = await findDeliveryByName('raidReminder');
+        const delivery = await this.deliveryRepository.findDeliveryByName('raidReminder');
+        if (!delivery) {
+            throw new Error('Delivery not found');
+        }
+        const deliveryId = delivery.id;
         const defaultRaidId = targetData.length > 0 ? targetData[0].raidId : 'unknown';
         const communicationCode = `raidReminder_${defaultRaidId}`;
 

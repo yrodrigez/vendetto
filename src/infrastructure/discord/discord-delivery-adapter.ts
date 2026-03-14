@@ -1,9 +1,9 @@
 import { Client, User } from "discord.js";
-import { IMessageSenderPort } from "@/application/ports/delivery/IMessageSenderPort";
+import { MessageSenderPort } from "@/application/ports/outbound/delivery/message-sender-repository.port";
 import { Message } from "@/domain/delivery/models";
 import { getDiscordClient } from "./discord-api.adapter";
 
-export class DiscordDeliveryAdapter implements IMessageSenderPort {
+export class DiscordDeliveryAdapter implements MessageSenderPort {
     private userCache = new Map<string, User>();
 
 

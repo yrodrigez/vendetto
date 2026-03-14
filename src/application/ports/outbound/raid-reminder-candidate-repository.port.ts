@@ -9,9 +9,6 @@ export type RaidReminderCandidate = {
 
 export interface IRaidReminderCandidateRepositoryPort {
     findAll(params?: {
-        activeFrom: string,
-        alreadyNotifiedCode: string,
-        alreadyNotifiedDelay: string,
-        timezone: string
+        communicationCode: string,
     }): Promise<RaidReminderCandidate[]>;
 }

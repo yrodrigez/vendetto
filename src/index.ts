@@ -1,1 +1,3 @@
-import './main/bootstrap'
+import { App } from '@/main/app'
+
+void App.start()

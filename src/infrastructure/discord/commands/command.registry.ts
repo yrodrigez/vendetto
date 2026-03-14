@@ -32,6 +32,7 @@ export class CommandRegistry {
                 console.error(`Failed to register slash commands for guild ${id}`, err);
             }
         }));
+        console.log(`Applied ${this.commands.size} commands to client`);
     }
 
     getCommands(): DiscordCommand[] {

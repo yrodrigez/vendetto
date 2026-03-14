@@ -1,6 +1,6 @@
-import { IMessageSenderPort } from "@/application/ports/delivery/IMessageSenderPort";
-import { IBroadlogRepositoryPort } from "@/application/ports/delivery/IBroadlogRepositoryPort";
-import { IUrlRegistrationPort } from "@/application/ports/delivery/IUrlRegistrationPort";
+import { MessageSenderPort } from "@/application/ports/outbound/delivery/message-sender-repository.port";
+import { BroadlogRepositoryPort } from "@/application/ports/outbound/delivery/broadlog-repository.port";
+import { IUrlRegistrationPort } from "@/application/ports/outbound/delivery/url-registration.port";
 import { optimizeTextContent } from "@/domain/delivery/services/optimizeTextContent";
 import { deduplicateTarget } from "@/domain/delivery/services/deduplicateTarget";
 import { personalize } from "@/domain/delivery/services/personalize";
@@ -10,8 +10,8 @@ import threadPool from "@/util/thread-pool";
 
 export class ProcessDeliveryUseCase {
     constructor(
-        private messageSender: IMessageSenderPort,
-        private broadlogRepository: IBroadlogRepositoryPort,
+        private messageSender: MessageSenderPort,
+        private broadlogRepository: BroadlogRepositoryPort,
         private urlRegistration: IUrlRegistrationPort
     ) { }
 
@@ -107,7 +107,7 @@ export class ProcessDeliveryUseCase {
         }
 
         await Promise.all(personalizedMessages.map(async ({ user, message, urls }) => threadPool.submit(async () => {
-            const { content, embeds, communicationCode } = message
+            const { content, communicationCode } = message
             try {
                 await this.messageSender.send(user.id, message)
                 results.successful.push(user.id)

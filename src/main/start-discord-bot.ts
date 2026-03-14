@@ -1,41 +1,75 @@
+import { InvitesStartedCommand } from "@/application/commands/invites-started.command";
+import { OffPushToTalkCommand } from "@/application/commands/off-push-to-talk.command";
+import { PingCommand } from "@/application/commands/ping.command";
+import { StartPushToTalkCommand } from "@/application/commands/start-push-to-talk.command";
+import { InteractionCreateEvent } from "@/application/events/interaction-create.event";
+import { ReadyEvent } from "@/application/events/ready.event";
 import { InvitesStartedWorkflow } from "@/application/workflows/invites-started/invites-started.workflow";
 import { CommandRegistry } from "@/infrastructure/discord/commands/command.registry";
-import { InvitesStartedCommand } from "@/application/commands/invites-started.command";
-import { PingCommand } from "@/application/commands/ping.command";
-import { getDiscordClient } from "@/infrastructure/discord/discord-api.adapter";
-import { SupabaseRaidResetRepository } from "@/infrastructure/persistance/repositories/raid-reset/supabase-raid-reset.repository";
+import { getDiscordClient, getGuilds } from "@/infrastructure/discord/discord-api.adapter";
+import { EventsRegistry } from "@/infrastructure/discord/events/events.registry";
 import { createContainer } from "./workflows-container";
-import { interactionCreateEvent } from "@/events/interactionCreate";
-import { readyEvent } from "@/events/ready";
-import { Events } from "discord.js";
+import { UpdateUserNicknameOnLoginEvent } from "@/application/events/update-user-nickname-on-login.event";
+
 export async function startCommands() {
     const {
         processDeliveryUseCase,
         workflowRepository,
-        workflowSchedulerRepository
+        workflowSchedulerRepository,
+        guildFeaturePolicyService,
+        memberRolesRepository,
+        logger,
+        raidResetRepository,
+        findDiscordNicknameCandidatesUseCase,
+        updateDiscordNicknameToCharacterNameUseCase,
+        deliveryRepository
     } = createContainer();
 
-    const raidResetRepository = new SupabaseRaidResetRepository();
+    const client = await getDiscordClient();
+    const eventsRegistry = new EventsRegistry();
 
-    const invitesStartedWorkflow = new InvitesStartedWorkflow(
-        raidResetRepository,
-        processDeliveryUseCase,
-        workflowRepository,
-        workflowSchedulerRepository
+    const readyEvent = new ReadyEvent(guildFeaturePolicyService);
+    eventsRegistry.register(readyEvent);
+
+    const interactionCreate = new InteractionCreateEvent(logger);
+    eventsRegistry.register(interactionCreate);
+
+    const updateNicknameEvent = new UpdateUserNicknameOnLoginEvent(
+        findDiscordNicknameCandidatesUseCase,
+        updateDiscordNicknameToCharacterNameUseCase,
+        logger
     );
+    eventsRegistry.register(updateNicknameEvent);
 
-    const invitesStartedCommand = new InvitesStartedCommand(invitesStartedWorkflow);
-    const pingCommand = new PingCommand();
+    eventsRegistry.applyToClient(client);
 
     const commandRegistry = new CommandRegistry();
-    commandRegistry.register(invitesStartedCommand);
+    const guilds = await getGuilds()
+    for (const guild of guilds.values()) {
+        if (guildFeaturePolicyService.isFeatureEnabled(guild.id, "raidInvitesNotifications")) {
+            const invitesStartedWorkflow = new InvitesStartedWorkflow(
+                raidResetRepository,
+                processDeliveryUseCase,
+                workflowRepository,
+                workflowSchedulerRepository,
+                guild.id,
+                deliveryRepository
+            );
+            const invitesStartedCommand = new InvitesStartedCommand(invitesStartedWorkflow, guildFeaturePolicyService, memberRolesRepository);
+            commandRegistry.register(invitesStartedCommand);
+        }
+    }
+
+    const startPushToTalkCommand = new StartPushToTalkCommand(memberRolesRepository);
+    commandRegistry.register(startPushToTalkCommand);
+
+    const offPushToTalkCommand = new OffPushToTalkCommand(memberRolesRepository);
+    commandRegistry.register(offPushToTalkCommand);
+
+    const pingCommand = new PingCommand();
     commandRegistry.register(pingCommand);
 
-    const client = await getDiscordClient();
     await commandRegistry.applyToClient(client);
-
-    client.on(Events.InteractionCreate, (interaction) => interactionCreateEvent.execute(interaction));
-    client.once(Events.ClientReady, (c) => readyEvent.execute(c));
 
     console.log(`Commands and Events registered to client`);
 }

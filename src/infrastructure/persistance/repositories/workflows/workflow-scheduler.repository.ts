@@ -16,7 +16,7 @@ type WorkflowScheduleRow = {
     created_at: Date
 }
 
-function mapSchedule(row: WorkflowScheduleRow): WorkflowSchedule {
+function mapScheduledWorkflow(row: WorkflowScheduleRow): WorkflowSchedule {
     return {
         id: row.id,
         name: row.name,
@@ -34,19 +34,19 @@ export class WorkflowSchedulerRepository implements WorkflowSchedulerRepositoryP
     async findDueWorkflows(): Promise<WorkflowSchedule[]> {
         const sql = readResourceFile(__dirname, 'sql/find-due-workflows.sql')
         const rows = await this.db.query<WorkflowScheduleRow>(sql)
-        return rows.map(mapSchedule)
+        return rows.map(mapScheduledWorkflow)
     }
 
-    async findByNameAndContext(name: string, context?: string): Promise<WorkflowSchedule | undefined> {
+    async findByNameAndContext(name: string, context: string): Promise<WorkflowSchedule | undefined> {
         const sql = readResourceFile(__dirname, 'sql/find-workflow-by-name.sql')
-        const rows = await this.db.query<WorkflowScheduleRow>(sql, [name, context ?? null])
-        return rows[0] ? mapSchedule(rows[0]) : undefined
+        const rows = await this.db.query<WorkflowScheduleRow>(sql, [name, context])
+        return rows[0] ? mapScheduledWorkflow(rows[0]) : undefined
     }
 
     async upsert(name: string, scheduler: string, status: WorkflowScheduleStatus, context: string): Promise<WorkflowSchedule> {
         const sql = readResourceFile(__dirname, 'sql/upsert-workflow.sql')
         const rows = await this.db.query<WorkflowScheduleRow>(sql, [name, scheduler, status, context])
-        return mapSchedule(rows[0])
+        return mapScheduledWorkflow(rows[0])
     }
 
     async updateNextExecution(id: string, nextExecution: Date): Promise<void> {

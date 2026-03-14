@@ -1,6 +1,5 @@
 import moment from "moment";
 import { User } from "discord.js";
-import { findDeliveryByName } from "@/util/findDeliveryByName";
 import { ProcessDeliveryUseCase } from "@/application/usecases/delivery/ProcessDeliveryUseCase";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
 import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
@@ -12,6 +11,7 @@ import {
     WorkflowName,
     WorkflowWithSchedule
 } from "@/application/workflows/workflow";
+import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/delivery-repository.port";
 
 export type RaidSignupNotifierInput = {
     seedList: User[] | string[];
@@ -31,7 +31,8 @@ export class RaidSignupNotifierWorkflow extends WorkflowWithSchedule<RaidSignupN
         private readonly processDeliveryUseCase: ProcessDeliveryUseCase,
         workflowRepository: WorkflowRunRepositoryPort,
         schedulerRepository: WorkflowSchedulerRepositoryPort,
-        context: string
+        context: string,
+        private readonly deliveryRepository: DeliveryRepositoryPort
     ) {
         super(workflowRepository, schedulerRepository, context);
     }
@@ -136,7 +137,11 @@ export class RaidSignupNotifierWorkflow extends WorkflowWithSchedule<RaidSignupN
             content += `🔗 [View Raid Details](<https://www.everlastingvendetta.com/raid/${raid.raidId}>)\n\n`;
         });
 
-        const deliveryId = await findDeliveryByName('raidSignupNotifier'); // Ensure this ID exists or replace with hardcoded `6` if strictly required as in legacy
+        const delivery = await this.deliveryRepository.findDeliveryByName('raidSignupNotifier'); // Ensure this ID exists or replace with hardcoded `6` if strictly required as in legacy
+        if (!delivery) {
+            throw new Error('Delivery not found');
+        }
+        const deliveryId = delivery.id;
 
         const { successful, failed } = await this.processDeliveryUseCase.execute({
             id: deliveryId || 6, // Provided fallback to match `id: 6` in legacy code

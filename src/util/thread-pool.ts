@@ -1,5 +1,3 @@
-
-
 export class RateLimitedThreadPool {
     private readonly limit: number;
     private readonly interval: number;
