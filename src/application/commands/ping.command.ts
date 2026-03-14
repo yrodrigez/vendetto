@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { DiscordCommand } from "../command.interface";
+import { DiscordCommand } from "../../infrastructure/discord/commands/command.interface";
 
 
 export class PingCommand implements DiscordCommand {

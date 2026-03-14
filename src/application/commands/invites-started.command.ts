@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { DiscordCommand } from "../command.interface";
+import { DiscordCommand } from "../../infrastructure/discord/commands/command.interface";
 import { InvitesStartedWorkflow } from "@/application/workflows/invites-started/invites-started.workflow";
 import { hasFeature } from "@/util/features";
 import { getUserRoles } from "@/util/userPermissions";

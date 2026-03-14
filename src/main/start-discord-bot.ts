@@ -1,7 +1,7 @@
 import { InvitesStartedWorkflow } from "@/application/workflows/invites-started/invites-started.workflow";
 import { CommandRegistry } from "@/infrastructure/discord/commands/command.registry";
-import { InvitesStartedCommand } from "@/infrastructure/discord/commands/impl/invites-started.command";
-import { PingCommand } from "@/infrastructure/discord/commands/impl/ping.command";
+import { InvitesStartedCommand } from "@/application/commands/invites-started.command";
+import { PingCommand } from "@/application/commands/ping.command";
 import { getDiscordClient } from "@/infrastructure/discord/discord-api.adapter";
 import { SupabaseRaidResetRepository } from "@/infrastructure/persistance/repositories/raid-reset/supabase-raid-reset.repository";
 import { createContainer } from "./workflows-container";
