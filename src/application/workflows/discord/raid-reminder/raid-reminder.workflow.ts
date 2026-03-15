@@ -1,6 +1,6 @@
 import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/delivery-repository.port";
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
-import { IRaidReminderCandidateRepositoryPort } from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
+import { IRaidReminderCandidateRepositoryPort, RaidReminderCandidate } from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
 import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
 import { ProcessDeliveryUseCase } from "@/application/usecases/delivery/ProcessDeliveryUseCase";
@@ -21,9 +21,9 @@ export type RaidReminderInput = {
 }
 
 @WorkflowName('Campaign: Raid Reminder')
-@Schedule('00 22 * * *') // 21:30 daily Madrid time
+@Schedule('30 17 * * *') // 17:30 daily Madrid time
 export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput> {
-    private candidatesData: any[] = [];
+    private candidatesData: RaidReminderCandidate[];
     private content: string;
 
     constructor(
@@ -37,6 +37,7 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
     ) {
         super(workflowRepository, schedulerRepository, context);
         this.content = readResourceFile(__dirname, '/content.md');
+        this.candidatesData = [];
     }
 
     @Step('verify-content', 0)
@@ -68,18 +69,17 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
     async processDelivery() {
         const data = this.candidatesData;
         if (!data?.length) {
+            await this.logger.log(this.input.guildId, 'No members to notify for raid reminder').catch(err => console.error('Failed to log to channel:', err));
             return;
         }
 
-        const target = data.map((p: any) => ({ discordId: p.discordUserId }));
-        const targetData = data.map((p: any) => ({
+        const target = data.map((p: RaidReminderCandidate) => ({ discordId: p.discordUserId }));
+        const targetData = data.map((p: RaidReminderCandidate) => ({
             discordId: p.discordUserId,
+            characterName: p.characterName,
             raidName: p.raidName,
             raidDate: moment(p.raidDate).format('dddd, Do [at] h:mm A'),
-            accountId: null,
-            memberId: p.memberId,
             raidId: p.raidId,
-            characterName: p.characterName,
         }));
 
         const delivery = await this.deliveryRepository.findDeliveryByName('raidReminder');
@@ -87,7 +87,10 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
             throw new Error('Delivery not found');
         }
         const deliveryId = delivery.id;
-        const defaultRaidId = targetData.length > 0 ? targetData[0].raidId : 'unknown';
+        const defaultRaidId = targetData?.[0]?.raidId;
+        if (!defaultRaidId) {
+            throw new Error('Raid ID not found in candidate data');
+        }
         const communicationCode = `raidReminder_${defaultRaidId}`;
 
         const { successful, failed } = await this.processDeliveryUseCase.execute({

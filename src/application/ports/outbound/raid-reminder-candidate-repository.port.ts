@@ -1,5 +1,4 @@
 export type RaidReminderCandidate = {
-    memberId: string
     characterName: string
     discordUserId: string
     raidDate: string

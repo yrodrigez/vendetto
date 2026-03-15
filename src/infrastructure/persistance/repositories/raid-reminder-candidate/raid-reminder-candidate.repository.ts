@@ -8,12 +8,11 @@ import { DatabaseClient } from "@/infrastructure/database/db";
 
 function raidReminderCandidateMapper(raidReminderCandidate: any): RaidReminderCandidate {
     return {
-        memberId: raidReminderCandidate.memberId,
-        characterName: raidReminderCandidate.characterName,
-        discordUserId: raidReminderCandidate.discordUserId,
-        raidDate: raidReminderCandidate.raidDate,
-        raidName: raidReminderCandidate.raidName,
-        raidId: raidReminderCandidate.raidId
+        characterName: raidReminderCandidate.name,
+        discordUserId: raidReminderCandidate.discord_id,
+        raidDate: raidReminderCandidate.raid_date,
+        raidName: raidReminderCandidate.raid_name,
+        raidId: raidReminderCandidate.raid_id
     }
 }
 export class RaidReminderCandidateRepository implements IRaidReminderCandidateRepositoryPort {
