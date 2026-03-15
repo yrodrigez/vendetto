@@ -21,7 +21,7 @@ export type RaidReminderInput = {
 }
 
 @WorkflowName('Campaign: Raid Reminder')
-@Schedule('30 21 * * *') // 21:30 daily Madrid time
+@Schedule('00 22 * * *') // 21:30 daily Madrid time
 export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput> {
     private candidatesData: any[] = [];
     private content: string;

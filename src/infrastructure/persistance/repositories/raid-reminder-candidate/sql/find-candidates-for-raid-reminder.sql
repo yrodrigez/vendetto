@@ -2,8 +2,8 @@ WITH recent_active_members AS (
     SELECT DISTINCT m.id as member_id, m.user_id as user_id, m.character as character
     FROM public.ev_raid_participant rp
     JOIN ev_member m ON m.id = rp.member_id
-    WHERE (rp.created_at >= NOW() - $1::interval
-       OR m.created_at >= NOW() - $1::interval ) AND m.is_selected = true
+    WHERE (rp.created_at >= NOW() - '21 days'::interval
+       OR m.created_at >= NOW() - '21 days'::interval ) AND m.is_selected = true
 )
 , next_upcoming_raid AS (
     SELECT 
@@ -43,8 +43,8 @@ WITH recent_active_members AS (
     SELECT "to"
     FROM open_campaign.broadlog
     CROSS JOIN next_upcoming_raid
-    WHERE communication_code = $2::text || '_' || next_upcoming_raid.id::text
-      AND created_at::date >= NOW() - $3::interval
+    WHERE communication_code = $1::text || '_' || next_upcoming_raid.id::text
+      AND created_at::date >= NOW() - '2 days'::interval
       AND last_event = 'success'
 )
 , user_registered_in_raid_until_next_reset AS (
@@ -60,8 +60,8 @@ WITH recent_active_members AS (
 )
 SELECT op.provider_user_id as discord_id,
         am.character->>'name' as name,
-        0 as account_id,
-        ((r.raid_date + r.time) AT TIME ZONE $4::text) AS raid_date,
+        -- 0 as account_id,
+        ((r.raid_date + r.time) AT TIME ZONE 'Europe/Madrid'::text) AS raid_date,
         r.name AS raid_name,
         r.id AS raid_id
 FROM recent_active_members am
@@ -74,8 +74,8 @@ WHERE op.provider_user_id NOT IN (SELECT "to" FROM already_notified)
 UNION
 SELECT DISTINCT dm.discord_user_id AS discord_id,
                 m.character ->> 'name' AS name,
-                m.wow_account_id AS account_id,
-                ((r.raid_date + r.time) AT TIME ZONE $4::text) AS raid_date,
+                -- m.wow_account_id AS account_id,
+                ((r.raid_date + r.time) AT TIME ZONE 'Europe/Madrid'::text) AS raid_date,
                 r.name AS raid_name,
                 r.id AS raid_id
 FROM public.discord_members dm
