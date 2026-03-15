@@ -22,7 +22,7 @@ export class RaidReminderCandidateRepository implements IRaidReminderCandidateRe
     async findAll({ communicationCode, }: { communicationCode: string } = {
         communicationCode: 'raidReminder',
     }) {
-        const query = readResourceFile(__dirname, '/raid-reminder-candidate.sql');
+        const query = readResourceFile(__dirname, '/sql/find-candidates-for-raid-reminder.sql');
         const results = await this.databaseClient.query(query, [communicationCode]);
         return results.map(raidReminderCandidateMapper);
     }

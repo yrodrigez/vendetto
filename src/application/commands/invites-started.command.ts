@@ -1,4 +1,4 @@
-import { InvitesStartedWorkflow } from "@/application/workflows/invites-started/invites-started.workflow";
+import { InvitesStartedWorkflow } from "@/application/workflows/discord/invites-started/invites-started.workflow";
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { DiscordCommand } from "@/infrastructure/discord/commands/command.interface";
 import { GuildFeaturePolicyService } from "@/application/features/guild-feature-policy.service";

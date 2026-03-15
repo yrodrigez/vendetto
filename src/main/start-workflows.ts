@@ -1,10 +1,10 @@
-import { SyncDiscordNicknamesWorkflow } from "@/application/workflows/discord/sync-discord-nicknames.workflow";
+import { SyncDiscordNicknamesWorkflow } from "@/application/workflows/discord/sync-discord-nicknames.workflow/sync-discord-nicknames.workflow";
 import { WorkflowSchedulerService } from "@/application/workflows/workflow-scheduler.service";
 import { getGuilds } from "@/infrastructure/discord/discord-api.adapter";
 import { createContainer } from "./workflows-container";
-import { RaidReminderWorkflow } from "@/application/workflows/raid-reminder/raid-reminder.workflow";
+import { RaidReminderWorkflow } from "@/application/workflows/discord/raid-reminder/raid-reminder.workflow";
 
-import { RaidSignupNotifierWorkflow } from "@/application/workflows/raid-signup-notifier/raid-signup-notifier.workflow";
+import { RaidSignupNotifierWorkflow } from "@/application/workflows/discord/raid-signup-notifier/raid-signup-notifier.workflow";
 
 
 export async function startWorkflows() {

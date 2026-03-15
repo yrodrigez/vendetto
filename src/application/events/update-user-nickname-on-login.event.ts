@@ -5,7 +5,7 @@ import { FindDiscordNicknameCandidatesUseCase } from "../usecases/discord/find-d
 import { DiscordChannelLoggerPort } from "../ports/outbound/discord-channel-logger.port";
 import { UpdateDiscordNicknameToCharacterNameUseCase } from "../usecases/discord/update-discord-nickname.usecase";
 
-export class UpdateUserNicknameOnLoginEvent implements DiscordEvent {
+export class UpdateUserNicknameOnMemberJoinEvent implements DiscordEvent {
     public readonly name: keyof ClientEvents = Events.GuildMemberAdd;
     public readonly once = false;
     constructor(

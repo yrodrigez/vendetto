@@ -4,12 +4,12 @@ import { PingCommand } from "@/application/commands/ping.command";
 import { StartPushToTalkCommand } from "@/application/commands/start-push-to-talk.command";
 import { InteractionCreateEvent } from "@/application/events/interaction-create.event";
 import { ReadyEvent } from "@/application/events/ready.event";
-import { InvitesStartedWorkflow } from "@/application/workflows/invites-started/invites-started.workflow";
+import { InvitesStartedWorkflow } from "@/application/workflows/discord/invites-started/invites-started.workflow";
 import { CommandRegistry } from "@/infrastructure/discord/commands/command.registry";
 import { getDiscordClient, getGuilds } from "@/infrastructure/discord/discord-api.adapter";
 import { EventsRegistry } from "@/infrastructure/discord/events/events.registry";
 import { createContainer } from "./workflows-container";
-import { UpdateUserNicknameOnLoginEvent } from "@/application/events/update-user-nickname-on-login.event";
+import { UpdateUserNicknameOnMemberJoinEvent } from "@/application/events/update-user-nickname-on-login.event";
 
 export async function startCommands() {
     const {
@@ -34,7 +34,7 @@ export async function startCommands() {
     const interactionCreate = new InteractionCreateEvent(logger);
     eventsRegistry.register(interactionCreate);
 
-    const updateNicknameEvent = new UpdateUserNicknameOnLoginEvent(
+    const updateNicknameEvent = new UpdateUserNicknameOnMemberJoinEvent(
         findDiscordNicknameCandidatesUseCase,
         updateDiscordNicknameToCharacterNameUseCase,
         logger
