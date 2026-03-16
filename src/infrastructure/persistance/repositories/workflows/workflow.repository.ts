@@ -1,7 +1,7 @@
 import { DatabaseClient } from "@/infrastructure/database/db";
 import { readResourceFile } from "@/util/file-resource-helper";
 import {
-    type WorkflowSchedulerRepositoryPort,
+    type WorkflowRepositoryPort,
     type WorkflowSchedule,
     type WorkflowScheduleStatus
 } from "@/application/ports/outbound/workflow-scheduler-repository.port";
@@ -28,7 +28,7 @@ function mapScheduledWorkflow(row: WorkflowScheduleRow): WorkflowSchedule {
     }
 }
 
-export class WorkflowSchedulerRepository implements WorkflowSchedulerRepositoryPort {
+export class WorkflowRepository implements WorkflowRepositoryPort {
     constructor(private readonly db: DatabaseClient) { }
 
     async findDueWorkflows(): Promise<WorkflowSchedule[]> {

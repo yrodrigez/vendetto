@@ -1,4 +1,4 @@
-export type ExecutionStatus = 'queued' | 'running' | 'completed' | 'failed'
+export type ExecutionStatus = 'queued' | 'running' | 'completed' | 'failed' | 'stopped'
 export type ActivityStatus = 'queued' | 'running' | 'completed' | 'failed' | 'skipped'
 
 export type WorkflowExecution = {

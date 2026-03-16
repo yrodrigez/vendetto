@@ -2,7 +2,7 @@ import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/de
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
 import { IRaidReminderCandidateRepositoryPort, RaidReminderCandidate } from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
 import { ProcessDeliveryUseCase } from "@/application/usecases/delivery/ProcessDeliveryUseCase";
 import {
     Retryable,
@@ -30,12 +30,12 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
         private readonly candidateRepository: IRaidReminderCandidateRepositoryPort,
         private readonly processDeliveryUseCase: ProcessDeliveryUseCase,
         private readonly logger: DiscordChannelLoggerPort,
-        workflowRepository: WorkflowRunRepositoryPort,
-        schedulerRepository: WorkflowSchedulerRepositoryPort,
+        workflowExecutionRepository: WorkflowRunRepositoryPort,
+        workflowRepository: WorkflowRepositoryPort,
         context: string,
         private readonly deliveryRepository: DeliveryRepositoryPort
     ) {
-        super(workflowRepository, schedulerRepository, context);
+        super(workflowRepository, workflowExecutionRepository, context);
         this.content = readResourceFile(__dirname, '/content.md');
         this.candidatesData = [];
     }

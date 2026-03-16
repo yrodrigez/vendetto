@@ -15,7 +15,7 @@ export async function startCommands() {
     const {
         processDeliveryUseCase,
         workflowRepository,
-        workflowSchedulerRepository,
+        workflowExecutionRepository,
         guildFeaturePolicyService,
         memberRolesRepository,
         logger,
@@ -50,8 +50,8 @@ export async function startCommands() {
             const invitesStartedWorkflow = new InvitesStartedWorkflow(
                 raidResetRepository,
                 processDeliveryUseCase,
+                workflowExecutionRepository,
                 workflowRepository,
-                workflowSchedulerRepository,
                 guild.id,
                 deliveryRepository
             );

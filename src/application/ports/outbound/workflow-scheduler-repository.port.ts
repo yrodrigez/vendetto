@@ -10,7 +10,7 @@ export type WorkflowSchedule = {
     createdAt: Date
 }
 
-export interface WorkflowSchedulerRepositoryPort {
+export interface WorkflowRepositoryPort {
     findDueWorkflows(): Promise<WorkflowSchedule[]>
     findByNameAndContext(name: string, context: string): Promise<WorkflowSchedule | undefined>
     upsert(name: string, scheduler: string, status: WorkflowScheduleStatus, context?: string): Promise<WorkflowSchedule>

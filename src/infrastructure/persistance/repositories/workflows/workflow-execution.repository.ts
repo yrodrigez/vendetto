@@ -56,7 +56,7 @@ function mapActivity(row: ActivityRow): WorkflowActivity {
     }
 }
 
-export class WorkflowsRepository implements WorkflowRunRepositoryPort {
+export class WorkflowExecutionRepository implements WorkflowRunRepositoryPort {
     constructor(private readonly db: DatabaseClient) { }
 
     async createExecution(workflowId: string, name: string): Promise<WorkflowExecution> {

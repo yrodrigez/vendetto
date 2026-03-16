@@ -3,7 +3,7 @@ import { DiscordNicknameCandidateRepositoryPort } from "@/application/ports/outb
 import { DiscordApiPort } from "@/application/ports/outbound/discord-api.port";
 import { GuildFeaturePolicyService } from "@/application/features/guild-feature-policy.service";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
 import { DiscordNicknameCandidate } from "@/application/dto/discord-nickname-candidate.dto";
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
 
@@ -15,13 +15,13 @@ export class SyncDiscordNicknamesWorkflow extends WorkflowWithSchedule<{ guildId
     constructor(
         private readonly candidateRepository: DiscordNicknameCandidateRepositoryPort,
         private readonly discordApi: DiscordApiPort,
-        workflowRepository: WorkflowRunRepositoryPort,
-        schedulerRepository: WorkflowSchedulerRepositoryPort,
+        readonly workflowRunRepository: WorkflowRunRepositoryPort,
+        readonly workflowRepository: WorkflowRepositoryPort,
         context: string,
         private readonly logger: DiscordChannelLoggerPort,
         private readonly featurePolicy: GuildFeaturePolicyService = new GuildFeaturePolicyService()
     ) {
-        super(workflowRepository, schedulerRepository, context)
+        super(workflowRepository, workflowRunRepository, context)
     }
 
     @Step('check-feature-enabled', 0)

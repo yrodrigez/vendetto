@@ -1,6 +1,6 @@
 import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/delivery-repository.port";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
 import { ProcessDeliveryUseCase } from "@/application/usecases/delivery/ProcessDeliveryUseCase";
 import { Retryable, Step, WorkflowName, WorkflowWithRetries } from "@/application/workflows/workflow";
 import { RaidResetRepository } from "@/domain/raid/raid-reset.repository";
@@ -16,12 +16,12 @@ export class InvitesStartedWorkflow extends WorkflowWithRetries<InvitesStartedWo
     constructor(
         private readonly raidResetRepository: RaidResetRepository,
         private readonly processDeliveryUseCase: ProcessDeliveryUseCase,
-        readonly workflowRepository: WorkflowRunRepositoryPort,
-        readonly schedulerRepository: WorkflowSchedulerRepositoryPort,
+        readonly workflowExcutionRepository: WorkflowRunRepositoryPort,
+        readonly workflowRepository: WorkflowRepositoryPort,
         readonly guildId: string,
         readonly deliveryRepository: DeliveryRepositoryPort
     ) {
-        super(workflowRepository, schedulerRepository, guildId);
+        super(workflowRepository, workflowExcutionRepository, guildId);
     }
 
     @Step('validate-reset', 0)

@@ -12,7 +12,7 @@ export async function startWorkflows() {
         discordApi,
         candidateRepository,
         workflowRepository,
-        workflowSchedulerRepository,
+        workflowExecutionRepository,
         guildFeaturePolicyService,
         logger,
         processDeliveryUseCase,
@@ -23,8 +23,8 @@ export async function startWorkflows() {
     } = createContainer()
 
 
-    const scheduler = new WorkflowSchedulerService(workflowSchedulerRepository, logger)
-
+    const scheduler = new WorkflowSchedulerService(workflowRepository, logger)
+    
     const guilds = await getGuilds()
     const seeds = await seedMemberRepository.findAll();
     for (const guild of guilds.values()) {
@@ -32,8 +32,8 @@ export async function startWorkflows() {
             const workflow = new SyncDiscordNicknamesWorkflow(
                 candidateRepository,
                 discordApi,
+                workflowExecutionRepository,
                 workflowRepository,
-                workflowSchedulerRepository,
                 guild.id,
                 logger
             )
@@ -47,8 +47,8 @@ export async function startWorkflows() {
                 raidReminderCandidateRepository,
                 processDeliveryUseCase,
                 logger,
+                workflowExecutionRepository,
                 workflowRepository,
-                workflowSchedulerRepository,
                 guild.id,
                 deliveryRepository
             )
@@ -58,8 +58,8 @@ export async function startWorkflows() {
             const raidSignupNotifierWorkflow = new RaidSignupNotifierWorkflow(
                 raidSignupNotifierRepository,
                 processDeliveryUseCase,
+                workflowExecutionRepository,
                 workflowRepository,
-                workflowSchedulerRepository,
                 guild.id,
                 deliveryRepository
             )

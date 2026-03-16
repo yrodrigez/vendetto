@@ -1,6 +1,6 @@
 import 'reflect-metadata'
-import { WorkflowRunRepositoryPort, type WorkflowExecution } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowSchedulerRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRunRepositoryPort as WorkflowExecutionRepositoryPort, type WorkflowExecution } from "@/application/ports/outbound/workflow-run-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
 import { CronExpressionParser } from 'cron-parser'
 
 const STEPS_METADATA_KEY = Symbol('workflow:steps')
@@ -19,6 +19,13 @@ export type RetryOptions = {
     delayMs?: number
     backoff?: 'fixed' | 'exponential'
 }
+
+export type ScheduledWorkflowOptions = {
+    isRunningOnStartup?: boolean,
+    isRecurring?: boolean,
+    endDate?: Date
+}
+
 
 export function WorkflowName(name: string): ClassDecorator {
     return (target) => {
@@ -50,11 +57,16 @@ export function Retryable(options: RetryOptions = { maxRetries: 3, delayMs: 1000
     }
 }
 
-export abstract class Workflow<TInput> {
+export abstract class Workflow<TInput, TOutput = void> {
     workflowId: string | null = null
+    protected currentStepId: string | null = null
+    protected lastStepId: string | null = null
+    protected executionId: number | null = null
+
 
     constructor(
-        protected readonly workflowRepository: WorkflowRunRepositoryPort,
+        protected readonly workflowRepository: WorkflowRepositoryPort,
+        protected readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort,
         protected input: TInput = {} as TInput,
         protected readonly context: string
     ) { }
@@ -73,26 +85,52 @@ export abstract class Workflow<TInput> {
     }
 
     protected async resolveWorkflowId(): Promise<string> {
-        if (this.workflowId) return this.workflowId
-        throw new Error(`Workflow "${this.name}" has no workflowId. Use WorkflowWithSchedule or set workflowId manually.`)
+        if (this.workflowId) return this.workflowId;
+
+        const existing = await this.workflowRepository.findByNameAndContext(this.name, this.context);
+        if (existing) {
+            this.workflowId = existing.id;
+            return existing.id;
+        }
+
+        // Create a new entry but with no running schedule
+        const record = await this.workflowRepository.upsert(this.name, '', 'stopped');
+        this.workflowId = record.id;
+        return record.id;
     }
 
-    async execute(input: TInput): Promise<void> {
+    protected async stop(): Promise<void> {
+        if (!this.workflowId) {
+            throw new Error(`Cannot stop workflow "${this.name}" because it has no workflowId.`)
+        }
+
+        await this.workflowRepository.updateStatus(this.workflowId, 'stopped')
+        if (this.executionId) {
+            await this.workflowExecutionRepository.updateExecution(this.executionId, { status: 'stopped' })
+        }
+
+    }
+
+    async execute(input: TInput): Promise<TOutput> {
         this.input = input
         const workflowId = await this.resolveWorkflowId()
-        const execution = await this.workflowRepository.createExecution(workflowId, this.name)
-
+        const execution = await this.workflowExecutionRepository.createExecution(workflowId, this.name)
+        this.executionId = execution.id
+        this.currentStepId = null
+        this.lastStepId = null
+        let output: TOutput | void = undefined
         try {
             const steps = this.getSteps()
-            await this.workflowRepository.updateExecution(execution.id, { status: 'running' })
+            await this.workflowExecutionRepository.updateExecution(execution.id, { status: 'running' })
 
             for (const step of steps) {
-                await this.executeStep(execution, step)
+                output = await this.executeStep(execution, step)
             }
 
-            await this.workflowRepository.updateExecution(execution.id, { status: 'completed' })
+            await this.workflowExecutionRepository.updateExecution(execution.id, { status: 'completed' })
+            return output as TOutput
         } catch (error: any) {
-            await this.workflowRepository.updateExecution(execution.id, {
+            await this.workflowExecutionRepository.updateExecution(execution.id, {
                 status: 'failed',
                 error: error.message ?? String(error)
             })
@@ -100,17 +138,20 @@ export abstract class Workflow<TInput> {
         }
     }
 
-    protected async executeStep(execution: WorkflowExecution, step: StepMetadata): Promise<void> {
-        const activity = await this.workflowRepository.createActivity(execution.id, step.name)
-        await this.workflowRepository.updateExecution(execution.id, { currentStepId: activity.id })
-        await this.workflowRepository.updateActivity(activity.id, { status: 'running' })
+    protected async executeStep(execution: WorkflowExecution, step: StepMetadata): Promise<TOutput | void> {
+        const activity = await this.workflowExecutionRepository.createActivity(execution.id, step.name)
+        await this.workflowExecutionRepository.updateExecution(execution.id, { currentStepId: activity.id })
+        await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'running' })
+        this.currentStepId = activity.id
 
         try {
-            await (this as any)[step.methodKey]()
-            await this.workflowRepository.updateActivity(activity.id, { status: 'completed' })
-            await this.workflowRepository.updateExecution(execution.id, { lastStepId: activity.id })
+            const result = await (this as any)[step.methodKey]()
+            await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'completed' })
+            await this.workflowExecutionRepository.updateExecution(execution.id, { lastStepId: activity.id })
+            this.lastStepId = activity.id;
+            return result
         } catch (error: any) {
-            await this.workflowRepository.updateActivity(activity.id, {
+            await this.workflowExecutionRepository.updateActivity(activity.id, {
                 status: 'failed',
                 error: error.message ?? String(error)
             })
@@ -119,40 +160,20 @@ export abstract class Workflow<TInput> {
     }
 }
 
-export abstract class WorkflowWithRetries<T> extends Workflow<T> {
+export abstract class WorkflowWithRetries<T, TOutput = void> extends Workflow<T, TOutput> {
     constructor(
-        workflowRepository: WorkflowRunRepositoryPort,
-        protected readonly schedulerRepository: WorkflowSchedulerRepositoryPort,
+        protected readonly workflowRepository: WorkflowRepositoryPort,
+        protected readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort,
         protected readonly context: string
     ) {
-        super(workflowRepository, {} as T, context)
+        super(workflowRepository, workflowExecutionRepository, {} as T, context)
     }
 
     private getRetryOptions(methodKey: string): RetryOptions | undefined {
         return Reflect.getOwnMetadata(RETRY_METADATA_KEY, this.constructor, methodKey)
     }
 
-    protected async resolveWorkflowId(): Promise<string> {
-        if (this.workflowId) return this.workflowId;
-
-        // If a scheduler is provided, we use the workflow name as the permanent record
-        if (this.schedulerRepository) {
-            const existing = await this.schedulerRepository.findByNameAndContext(this.name, this.context);
-            if (existing) {
-                this.workflowId = existing.id;
-                return existing.id;
-            }
-
-            // Create a new entry but with no running schedule
-            const record = await this.schedulerRepository.upsert(this.name, '', 'stopped');
-            this.workflowId = record.id;
-            return record.id;
-        }
-
-        throw new Error("Unable to resolve workflow ID without a schedulerRepository.");
-    }
-
-    protected async executeStep(execution: WorkflowExecution, step: StepMetadata): Promise<void> {
+    protected async executeStep(execution: WorkflowExecution, step: StepMetadata): Promise<TOutput | void> {
         const retryOptions = this.getRetryOptions(step.methodKey)
 
         if (!retryOptions) {
@@ -163,21 +184,21 @@ export abstract class WorkflowWithRetries<T> extends Workflow<T> {
         let lastError: any
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            const activity = await this.workflowRepository.createActivity(
+            const activity = await this.workflowExecutionRepository.createActivity(
                 execution.id,
                 attempt === 0 ? step.name : `${step.name} (retry ${attempt}/${maxRetries})`
             )
-            await this.workflowRepository.updateExecution(execution.id, { currentStepId: activity.id })
-            await this.workflowRepository.updateActivity(activity.id, { status: 'running' })
+            await this.workflowExecutionRepository.updateExecution(execution.id, { currentStepId: activity.id })
+            await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'running' })
 
             try {
-                await (this as any)[step.methodKey]()
-                await this.workflowRepository.updateActivity(activity.id, { status: 'completed' })
-                await this.workflowRepository.updateExecution(execution.id, { lastStepId: activity.id })
-                return
+                const result = await (this as any)[step.methodKey]()
+                await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'completed' })
+                await this.workflowExecutionRepository.updateExecution(execution.id, { lastStepId: activity.id })
+                return result
             } catch (error: any) {
                 lastError = error
-                await this.workflowRepository.updateActivity(activity.id, {
+                await this.workflowExecutionRepository.updateActivity(activity.id, {
                     status: 'failed',
                     error: error.message ?? String(error)
                 })
@@ -194,16 +215,15 @@ export abstract class WorkflowWithRetries<T> extends Workflow<T> {
     }
 }
 
-export abstract class WorkflowWithSchedule<T> extends WorkflowWithRetries<T> {
-    readonly context: string
+export abstract class WorkflowWithSchedule<T, TOutput = void> extends WorkflowWithRetries<T, TOutput> {
 
     constructor(
-        workflowRepository: WorkflowRunRepositoryPort,
-        schedulerRepository: WorkflowSchedulerRepositoryPort,
-        context: string
+        readonly workflowRepository: WorkflowRepositoryPort,
+        readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort,
+        readonly context: string,
+        readonly options: ScheduledWorkflowOptions = { isRunningOnStartup: false, isRecurring: true, endDate: undefined }
     ) {
-        super(workflowRepository, schedulerRepository, context)
-        this.context = context
+        super(workflowRepository, workflowExecutionRepository, context)
     }
 
     get schedule(): string {
@@ -214,41 +234,22 @@ export abstract class WorkflowWithSchedule<T> extends WorkflowWithRetries<T> {
         return cron
     }
 
-    protected async resolveWorkflowId(): Promise<string> {
-        if (this.workflowId) return this.workflowId
-        const record = await this.schedulerRepository!.findByNameAndContext(this.name, this.context)
-        if (!record) {
-            throw new Error(`Workflow "${this.name}" (context: ${this.context}) is not registered. Call register() first.`)
-        }
-        this.workflowId = record.id
-        return record.id
-    }
-
     async register(): Promise<void> {
-        const existing = await this.schedulerRepository!.findByNameAndContext(this.name, this.context)
+        const existing = await this.workflowRepository.findByNameAndContext(this.name, this.context)
         if (existing) {
             this.workflowId = existing.id
-            await this.schedulerRepository!.updateNextExecution(existing.id, this.computeNextExecution())
+            await this.workflowRepository.updateNextExecution(existing.id, this.computeNextExecution())
 
-            await this.schedulerRepository!.upsert(this.name, this.schedule, this.schedule ? 'scheduled' : 'running', this.context)
+            await this.workflowRepository.upsert(this.name, this.schedule, 'scheduled', this.context)
             console.log(`Workflow "${this.name}" (context: ${this.context}) already registered (id: ${existing.id}, status: ${existing.status})`)
             return
         }
 
-        const record = await this.schedulerRepository!.upsert(this.name, this.schedule, 'running', this.context)
+        const record = await this.workflowRepository.upsert(this.name, this.schedule, 'running', this.context)
         this.workflowId = record.id
         const nextExecution = this.computeNextExecution()
-        await this.schedulerRepository!.updateNextExecution(record.id, nextExecution)
+        await this.workflowRepository.updateNextExecution(record.id, nextExecution)
         console.log(`Workflow "${this.name}" (context: ${this.context}) registered (id: ${record.id}), next execution: ${nextExecution.toISOString()}`)
-    }
-
-    async execute(params: T): Promise<void> {
-        await super.execute(params)
-
-        const id = await this.resolveWorkflowId()
-        const nextExecution = this.computeNextExecution()
-        await this.schedulerRepository.updateNextExecution(id, nextExecution)
-        console.log(`Workflow "${this.name}" (context: ${this.context}) next execution: ${nextExecution.toISOString()}`)
     }
 
     computeNextExecution(): Date {

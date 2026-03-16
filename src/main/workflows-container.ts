@@ -9,8 +9,8 @@ import { SupabaseBroadlogRepository } from "@/infrastructure/persistance/deliver
 import { SupabaseUrlRepository } from "@/infrastructure/persistance/delivery/supabase-url.repository";
 import { DiscordNicknameCandidateRepository } from "@/infrastructure/persistance/repositories/discord-nickname-candidate/discord-nickname-candidate-repository";
 import { RaidReminderCandidateRepository } from "@/infrastructure/persistance/repositories/raid-reminder-candidate/raid-reminder-candidate.repository";
-import { WorkflowSchedulerRepository } from "@/infrastructure/persistance/repositories/workflows/workflow-scheduler.repository";
-import { WorkflowsRepository } from "@/infrastructure/persistance/repositories/workflows/workflows.repository";
+import { WorkflowRepository } from "@/infrastructure/persistance/repositories/workflows/workflow.repository";
+import { WorkflowExecutionRepository } from "@/infrastructure/persistance/repositories/workflows/workflow-execution.repository";
 import { RaidSignupNotifierRepository } from "@/infrastructure/persistance/repositories/raid-signup-notifier/raid-signup-notifier.repository";
 import { MemberRolesRepository } from "@/infrastructure/persistance/repositories/member-roles/member-roles.repository";
 import { SupabaseRaidResetRepository } from "@/infrastructure/persistance/repositories/raid-reset/supabase-raid-reset.repository";
@@ -25,8 +25,8 @@ export function createContainer() {
     const discordApi = new DiscordApiAdapter();
     const databaseClient = new DatabaseClient();
     const candidateRepository = new DiscordNicknameCandidateRepository(databaseClient);
-    const workflowRepository = new WorkflowsRepository(databaseClient);
-    const workflowSchedulerRepository = new WorkflowSchedulerRepository(databaseClient);
+    const workflowExecutionRepository = new WorkflowExecutionRepository(databaseClient);
+    const workflowRepository = new WorkflowRepository(databaseClient);
     const logger = new LogChannelEntry() // You would implement this port to log messages to a specific Discord channel
     const raidReminderCandidateRepository = new RaidReminderCandidateRepository(databaseClient);
     const broadlogRepo = new SupabaseBroadlogRepository();
@@ -48,8 +48,8 @@ export function createContainer() {
         discordApi,
         candidateRepository,
         databaseClient,
+        workflowExecutionRepository,
         workflowRepository,
-        workflowSchedulerRepository,
         logger,
         raidReminderCandidateRepository,
         processDeliveryUseCase,
