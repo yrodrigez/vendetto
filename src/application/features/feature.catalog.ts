@@ -21,6 +21,9 @@ const CATALOG: Record<FeatureName, FeatureConfig> = {
     },
     campaigns: {
         description: "Campaigns"
+    },
+    syncClassRoles: {
+        description: "Sync class roles"
     }
 }
 

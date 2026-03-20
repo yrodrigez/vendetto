@@ -8,7 +8,7 @@ import { DiscordNicknameCandidate } from "@/application/dto/discord-nickname-can
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
 
 @WorkflowName('sync-discord-nicknames-on-login')
-@Schedule('*/15 17-23 * * *') // Every 15 minutes between 17:00 and 23:59
+@Schedule('*/15 17-23 * * *', { isRunningOnStartup: true }) // Every 15 minutes between 17:00 and 23:59
 export class SyncDiscordNicknamesWorkflow extends WorkflowWithSchedule<{ guildId: string }> {
     private candidates: DiscordNicknameCandidate[] = []
 
@@ -24,7 +24,12 @@ export class SyncDiscordNicknamesWorkflow extends WorkflowWithSchedule<{ guildId
         super(workflowRepository, workflowRunRepository, context)
     }
 
-    @Step('check-feature-enabled', 0)
+    @Step('start-workflow', 0)
+    async startWorkflow() {
+        console.log(`Starting workflow "${this.name}" with input:`, this.input)
+    }
+
+    @Step('check-feature-enabled', 1)
     @Retryable()
     async checkFeatureEnabled() {
         if (!this.featurePolicy.isFeatureEnabled(this.input.guildId, 'updateNicknameToCharacterNickname')) {
@@ -32,32 +37,33 @@ export class SyncDiscordNicknamesWorkflow extends WorkflowWithSchedule<{ guildId
         }
     }
 
-    @Step('fetch-candidates', 1)
+    @Step('fetch-candidates', 2)
     @Retryable()
     async fetchCandidates() {
         this.candidates = await this.candidateRepository.findSelectedMembersWithDiscordAccount()
         console.log(`Found ${this.candidates.length} nickname candidates`)
     }
 
-    @Step('update-nicknames', 2)
+    @Step('update-nicknames', 3)
     @Retryable()
     async updateNicknames() {
-        for (const candidate of this.candidates) {
+        const allMemebers = await this.discordApi.findAllMembers(this.input.guildId)
+        await Promise.all(this.candidates.map(async candidate => {
             try {
                 if (candidate.discordUserId === '600220534885711893') {
                     console.log(`Skipping nickname update for user ${candidate.discordUserId} (excluded user)`)
-                    continue
+                    return;
                 }
 
-                const member = await this.discordApi.getMember(candidate.discordUserId, this.input.guildId);
+                const member = allMemebers.find(m => m.id === candidate.discordUserId);
                 if (!member) {
                     console.log(`Discord user ${candidate.discordUserId} not found in guild ${this.input.guildId}. Skipping nickname update.`)
-                    continue;
+                    return;
                 }
 
                 if (member.nickname === candidate.characterName || member.user.username === candidate.characterName) {
                     console.log(`Nickname for Discord user ${candidate.discordUserId} is already up to date. Skipping.`)
-                    continue;
+                    return;
                 }
                 console.log(`Updating nickname for Discord user ${candidate.discordUserId} to "${candidate.characterName}" in guild ${this.input.guildId}`)
                 const result = await this.discordApi.updateNickname(
@@ -74,8 +80,6 @@ export class SyncDiscordNicknamesWorkflow extends WorkflowWithSchedule<{ guildId
                 this.logger.log(this.input.guildId, `Failed to update nickname for ${candidate.discordUserId}: ${error.message ?? String(error)}`)
                 return; // Stop processing further candidates on error to avoid hitting rate limits or causing multiple failures in a single run
             }
-        }
-
-        // this.logger.log(this.input.guildId, `Finished processing ${this.candidates.length} nickname candidates`)
+        }))
     }
 }

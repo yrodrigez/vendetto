@@ -18,6 +18,15 @@ import { UpdateDiscordNicknameToCharacterNameUseCase } from "@/application/useca
 import { FindDiscordNicknameCandidatesUseCase } from "@/application/usecases/discord/find-discord-nickname-candidates.usecase";
 import { DeliveryRepository } from "@/infrastructure/persistance/delivery/supabase-delivery.repository";
 import { SeedMemberRepository } from "@/infrastructure/persistance/delivery/seed-membner.repository";
+import { MembersRepository } from "@/infrastructure/persistance/repositories/members/members.repository";
+import { FindMembersShouldBeInGuildRoleUsecase } from "@/application/usecases/discord/find-members-should-be-in-guild-role.usecase";
+import { EvApiService } from "@/infrastructure/ev-api.service";
+import { InsertUsersInRoleUsecase } from "@/application/usecases/discord/insert-users-in-role.usecase";
+import { RemoveUsersFromRoleUsecase } from "@/application/usecases/discord/remove-users-from-role.usecase";
+import { FindCandidatesForClassRoleUseCase } from "@/application/usecases/discord/find-candidates-for-class-role.usecase";
+import { DiscordMembersRepository } from "@/infrastructure/persistance/repositories/discord-members/discord-members.repository";
+import { UsersRepository } from "@/infrastructure/persistance/repositories/users/users.repository";
+import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-membets.usecase";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -37,10 +46,30 @@ export function createContainer() {
     const memberRolesRepository = new MemberRolesRepository(databaseClient);
     const raidResetRepository = new SupabaseRaidResetRepository();
     const deliveryRepository = new DeliveryRepository();
+    const membersRepository = new MembersRepository(databaseClient);
+    const backendAPIService = new EvApiService();
+    const findMembersShouldBeInGuildRoleUsecase = new FindMembersShouldBeInGuildRoleUsecase(
+        membersRepository,
+        discordApi,
+        backendAPIService
+    );
+    const insertUsersInRoleUsecase = new InsertUsersInRoleUsecase(discordApi);
+    const removeUsersFromRoleUsecase = new RemoveUsersFromRoleUsecase(discordApi);
+    const findCandidatesForClassRoleUseCase = new FindCandidatesForClassRoleUseCase(membersRepository, discordApi);
 
     const updateDiscordNicknameToCharacterNameUseCase = new UpdateDiscordNicknameToCharacterNameUseCase(discordApi);
     const findDiscordNicknameCandidatesUseCase = new FindDiscordNicknameCandidatesUseCase(candidateRepository);
     const seedMemberRepository = new SeedMemberRepository(databaseClient);
+    const discordMembersRepository = new DiscordMembersRepository(databaseClient);
+    const usersRepository = new UsersRepository(databaseClient);
+
+    const insertDiscordMembersUseCase = new InsertDiscordMembersUseCase(
+        discordApi,
+        discordMembersRepository,
+        usersRepository,
+        membersRepository,
+    );
+
 
     return {
         guildSubscriptionService,
@@ -62,6 +91,13 @@ export function createContainer() {
         updateDiscordNicknameToCharacterNameUseCase,
         findDiscordNicknameCandidatesUseCase,
         deliveryRepository,
-        seedMemberRepository
+        seedMemberRepository,
+        membersRepository,
+        backendAPIService,
+        findMembersShouldBeInGuildRoleUsecase,
+        insertUsersInRoleUsecase,
+        removeUsersFromRoleUsecase,
+        findCandidatesForClassRoleUseCase,
+        insertDiscordMembersUseCase,
     }
 }

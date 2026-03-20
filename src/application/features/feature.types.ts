@@ -1,4 +1,4 @@
-export type SubscriptionType = 'free' | 'premium';
+export type SubscriptionType = 'free' | 'premium' | 'not-registered';
 
 export type FeatureName =
     | 'updateNicknameToCharacterNickname'
@@ -6,6 +6,7 @@ export type FeatureName =
     | 'raidNotifications'
     | 'announceConnection'
     | 'syncGuildMembers'
+    | 'syncClassRoles'
     | 'raidInvitesNotifications'
     | 'campaigns'
 

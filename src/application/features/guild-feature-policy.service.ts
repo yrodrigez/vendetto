@@ -8,18 +8,21 @@ export class GuildFeaturePolicyService {
         private readonly freeFeatures: FeatureName[] = [
             'announceConnection',
             'updateNicknameToCharacterNickname',
-            'syncGuildMembers'
+            'syncGuildMembers',
+            'syncClassRoles'
         ],
         private readonly premiumFeatures: FeatureName[] = [
             'raidNotifications',
             'raidInvitesNotifications',
             'campaigns',
-            'sendPrivateMessage'
+            'sendPrivateMessage',
         ]
     ) { }
     isFeatureEnabled(guildId: string, featureName: FeatureName): boolean {
         const subscription = this.guildSubscriptionService.getSubscription(guildId);
         switch (subscription) {
+            case 'not-registered':
+                return false;
             case 'free':
                 return this.freeFeatures.includes(featureName);
             case 'premium':

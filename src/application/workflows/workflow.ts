@@ -45,9 +45,9 @@ export function Step(name: string, order?: number): MethodDecorator {
     }
 }
 
-export function Schedule(cron: string): ClassDecorator {
+export function Schedule(cron: string, options: ScheduledWorkflowOptions = {}): ClassDecorator {
     return (target) => {
-        Reflect.defineMetadata(SCHEDULE_METADATA_KEY, cron, target)
+        Reflect.defineMetadata(SCHEDULE_METADATA_KEY, { cron, ...options }, target)
     }
 }
 
@@ -216,21 +216,24 @@ export abstract class WorkflowWithRetries<T, TOutput = void> extends Workflow<T,
 }
 
 export abstract class WorkflowWithSchedule<T, TOutput = void> extends WorkflowWithRetries<T, TOutput> {
-
+    options: ScheduledWorkflowOptions = { isRunningOnStartup: false, isRecurring: true, endDate: undefined }
     constructor(
         readonly workflowRepository: WorkflowRepositoryPort,
         readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort,
         readonly context: string,
-        readonly options: ScheduledWorkflowOptions = { isRunningOnStartup: false, isRecurring: true, endDate: undefined }
+
     ) {
         super(workflowRepository, workflowExecutionRepository, context)
     }
 
     get schedule(): string {
-        const cron = Reflect.getOwnMetadata(SCHEDULE_METADATA_KEY, this.constructor)
+        const { cron, ...options } = Reflect.getOwnMetadata(SCHEDULE_METADATA_KEY, this.constructor) || {}
         if (!cron) {
             throw new Error(`Workflow class "${this.constructor.name}" is missing the @Schedule decorator`)
         }
+
+        this.options = { ...this.options, ...options }
+
         return cron
     }
 

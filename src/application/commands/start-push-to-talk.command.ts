@@ -11,7 +11,8 @@ export class StartPushToTalkCommand implements DiscordCommand {
     ];
 
     constructor(
-        private readonly memberRolesRepository: MemberRolesRepositoryPort
+        private readonly memberRolesRepository: MemberRolesRepositoryPort,
+
     ) { }
 
     public data = new SlashCommandBuilder()
@@ -19,7 +20,11 @@ export class StartPushToTalkCommand implements DiscordCommand {
         .setDescription('Starts the push to talk workflow for all users in the current channel');
 
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-        const channel = interaction.channel;
+        const client = interaction.client;
+        const channel = await client.channels.fetch(interaction.channel?.id ?? '', {
+            force: true,
+            cache: false,
+        });
 
         if (!channel?.isVoiceBased()) {
             await interaction.reply({
@@ -30,8 +35,7 @@ export class StartPushToTalkCommand implements DiscordCommand {
         }
 
         const userId = interaction.user.id;
-        const userRoles = await this.memberRolesRepository.findRolesForMember(userId);
-        const hasRole = userRoles.some(role => this.allowedRoles.includes(role));
+        const hasRole = await this.memberRolesRepository.isUserInRoles(userId, this.allowedRoles);
         if (!hasRole) {
             await interaction.reply({
                 content: 'You do not have permission to use this command',
@@ -77,7 +81,7 @@ export class StartPushToTalkCommand implements DiscordCommand {
         }
 
         await interaction.followUp({
-            content: 'Push to talk workflow started for all users in this channel!',
+            content: `Push to talk workflow started for ${members.size} users in this channel!`,
             flags: MessageFlags.Ephemeral,
         })
 

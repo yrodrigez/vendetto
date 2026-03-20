@@ -9,9 +9,9 @@ const GUILD_SUBSCRIPTIONS: Record<string, SubscriptionType> = {
 export class GuildSubscriptionService {
     getSubscription(guildId: string): SubscriptionType {
         if (!guildId) {
-            return 'free';
+            return 'not-registered' as SubscriptionType;
         }
 
-        return GUILD_SUBSCRIPTIONS[guildId] || 'free';
+        return GUILD_SUBSCRIPTIONS[guildId] || 'not-registered' as SubscriptionType;
     }
 }

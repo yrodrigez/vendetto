@@ -28,7 +28,8 @@ export class ReadyEvent implements DiscordEvent {
             }) as TextChannel | undefined;
 
             if (channel && channel.send) {
-                await channel.send("Vendetto ready to serve!");
+                //await channel.send("Vendetto ready to serve!");
+                console.log(`Sent ready message to channel ${channel.name} (${channel.id}) in guild ${guild.name} (${guild.id})`);
             } else {
                 console.log(`No channel found in guild ${guild.id}`);
             }

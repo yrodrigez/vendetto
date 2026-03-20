@@ -3,6 +3,12 @@ import { DatabaseClient } from "@/infrastructure/database/db";
 
 export class MemberRolesRepository implements MemberRolesRepositoryPort {
     constructor(private databaseClient: DatabaseClient) { }
+
+    async isUserInRoles(discordId: string, roleNames: string[]): Promise<boolean> {
+        const roles = await this.findRolesForMember(discordId);
+        return roles.some(role => roleNames.includes(role));
+    }
+
     async findRolesForMember(discordId: string): Promise<string[]> {
         const query = `
             with discord_roles as (

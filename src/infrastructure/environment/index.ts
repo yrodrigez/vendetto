@@ -14,7 +14,12 @@ const environment = {
         user: process.env.POSTGRES_USER!,
         password: process.env.POSTGRES_PASSWORD!,
         ssl: process.env.POSTGRES_SSL === 'true'
+    },
+    evApi: {
+        baseUrl: process.env.EV_API_BASE_URL!,
+        token: process.env.EV_API_TOKEN!,
     }
+
 } as const;
 
 function validateEnvironment(env: any) {

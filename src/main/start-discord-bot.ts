@@ -8,8 +8,8 @@ import { InvitesStartedWorkflow } from "@/application/workflows/discord/invites-
 import { CommandRegistry } from "@/infrastructure/discord/commands/command.registry";
 import { getDiscordClient, getGuilds } from "@/infrastructure/discord/discord-api.adapter";
 import { EventsRegistry } from "@/infrastructure/discord/events/events.registry";
-import { createContainer } from "./workflows-container";
 import { UpdateUserNicknameOnMemberJoinEvent } from "@/application/events/update-user-nickname-on-login.event";
+import { createContainer } from "./di-container";
 
 export async function startCommands() {
     const {
