@@ -26,13 +26,16 @@ export class EvApiService {
     ) { }
 
     async getRoster(): Promise<RosterCharacter[]> {
-        const response = await fetch(`${this.baseUrl}/api/wow/roster`, {
+        const url = `${this.baseUrl.replace(/\/+$/, '')}/api/wow/roster`;
+        console.log('[EvApiService] GET', url);
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${this.token}`,
             },
         });
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const body = await response.text().catch(() => '');
+            throw new Error(`HTTP error! status: ${response.status}, url: ${url}, body: ${body}`);
         }
 
         const { roster } = await response.json();
