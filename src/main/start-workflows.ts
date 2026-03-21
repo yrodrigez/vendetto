@@ -9,6 +9,7 @@ import { SyncDiscordGuildRolesWorkflow } from "@/application/workflows/discord/s
 import { SyncDiscordClassRolesWorkflow } from "@/application/workflows/discord/sync-discord-class-roles.workflow";
 import { createContainer } from "./di-container";
 import { InsertDiscordMembersWorkflow } from "@/application/workflows/discord/insert-discord-members.workflow";
+import { ResetChannelSyncWorkflow } from "@/application/workflows/discord/reset-channel-sync/reset-channel-sync.workflow";
 
 
 export async function startWorkflows() {
@@ -29,6 +30,9 @@ export async function startWorkflows() {
         findMembersShouldBeInGuildRoleUsecase,
         findCandidatesForClassRoleUseCase,
         insertDiscordMembersUseCase,
+        discordChannelAdapter,
+        resetChannelRepository,
+        resetParticipantRepository,
     } = createContainer()
 
 
@@ -110,6 +114,21 @@ export async function startWorkflows() {
             )
             await scheduler.registerWorkflow(insertDiscordMembersWorkflow, { guildId: guild.id })
             console.log(`Registered workflow "${insertDiscordMembersWorkflow.name}" for guild ${guild.id}`)
+        }
+
+        if (guildFeaturePolicyService.isFeatureEnabled(guild.id, "raidChannelSync")) {
+            const resetChannelSyncWorkflow = new ResetChannelSyncWorkflow(
+                discordChannelAdapter,
+                resetChannelRepository,
+                resetParticipantRepository,
+                resetParticipantRepository,
+                logger,
+                workflowExecutionRepository,
+                workflowRepository,
+                guild.id,
+            )
+            await scheduler.registerWorkflow(resetChannelSyncWorkflow, { guildId: guild.id })
+            console.log(`Registered workflow "${resetChannelSyncWorkflow.name}" for guild ${guild.id}`)
         }
     }
 

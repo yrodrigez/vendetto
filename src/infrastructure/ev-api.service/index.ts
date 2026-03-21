@@ -27,7 +27,6 @@ export class EvApiService {
 
     async getRoster(): Promise<RosterCharacter[]> {
         const url = `${this.baseUrl.replace(/\/+$/, '')}/api/wow/roster`;
-        console.log('[EvApiService] GET', url);
         const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${this.token}`,

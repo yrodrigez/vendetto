@@ -73,47 +73,56 @@ export class RaidReminderWorkflow extends WorkflowWithSchedule<RaidReminderInput
             return;
         }
 
-        const target = data.map((p: RaidReminderCandidate) => ({ discordId: p.discordUserId }));
-        const targetData = data.map((p: RaidReminderCandidate) => ({
-            discordId: p.discordUserId,
-            characterName: p.characterName,
-            raidName: p.raidName,
-            raidDate: moment(p.raidDate).format('dddd, Do [at] h:mm A'),
-            raidId: p.raidId,
-        }));
-
         const delivery = await this.deliveryRepository.findDeliveryByName('raidReminder');
         if (!delivery) {
             throw new Error('Delivery not found');
         }
         const deliveryId = delivery.id;
-        const defaultRaidId = targetData?.[0]?.raidId;
-        if (!defaultRaidId) {
-            throw new Error('Raid ID not found in candidate data');
+
+        const groupedByReset = new Map<string, RaidReminderCandidate[]>();
+        for (const candidate of data) {
+            const group = groupedByReset.get(candidate.raidId) ?? [];
+            group.push(candidate);
+            groupedByReset.set(candidate.raidId, group);
         }
-        const communicationCode = `raidReminder_${defaultRaidId}`;
 
-        const { successful, failed } = await this.processDeliveryUseCase.execute({
-            id: deliveryId,
-            target: target,
-            targetData: targetData,
-            targetMapping: {
-                targetName: 'user',
-                identifier: 'discordId',
-            },
-            message: {
-                seedList: this.input.seedList,
-                communicationCode,
-                targetMapping: { targetName: 'user' },
-                content: this.content.trim(),
-            }
-        });
+        const summaries: string[] = [];
 
-        const summary = `Delivery ${communicationCode} successful: ${successful.length}, failed: ${failed.length}`;
-        console.log(summary);
+        for (const [raidId, candidates] of groupedByReset) {
+            const target = candidates.map(p => ({ discordId: p.discordUserId }));
+            const targetData = candidates.map(p => ({
+                discordId: p.discordUserId,
+                characterName: p.characterName,
+                raidName: p.raidName,
+                raidDate: moment(p.raidDate).format('dddd, Do [at] h:mm A'),
+                raidId: p.raidId,
+            }));
+
+            const communicationCode = `raidReminder_${raidId}`;
+
+            const { successful, failed } = await this.processDeliveryUseCase.execute({
+                id: deliveryId,
+                target,
+                targetData,
+                targetMapping: {
+                    targetName: 'user',
+                    identifier: 'discordId',
+                },
+                message: {
+                    seedList: this.input.seedList,
+                    communicationCode,
+                    targetMapping: { targetName: 'user' },
+                    content: this.content.trim(),
+                }
+            });
+
+            const summary = `Delivery ${communicationCode}: ok=${successful.length}, fail=${failed.length}`;
+            console.log(summary);
+            summaries.push(summary);
+        }
 
         if (this.input.guildId) {
-            await this.logger.log(this.input.guildId, summary).catch(err => console.error('Failed to log to channel:', err));
+            await this.logger.log(this.input.guildId, summaries.join('\n')).catch(err => console.error('Failed to log to channel:', err));
         }
     }
 }

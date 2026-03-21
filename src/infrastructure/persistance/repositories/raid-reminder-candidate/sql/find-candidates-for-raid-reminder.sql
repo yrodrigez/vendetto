@@ -5,84 +5,92 @@ WITH recent_active_members AS (
     WHERE (rp.created_at >= NOW() - '21 days'::interval
        OR m.created_at >= NOW() - '21 days'::interval ) AND m.is_selected = true
 )
-, next_upcoming_raid AS (
-    SELECT 
-    rr.id, 
-    r.name, 
-    rr.raid_date, 
-    rr.time,
-    (rr.raid_date + rr.time) AS raid_datetime
+, upcoming_resets AS (
+    SELECT
+        rr.id,
+        r.name,
+        rr.raid_date,
+        rr.time,
+        (rr.raid_date + rr.time) AS raid_datetime,
+        CASE
+            WHEN extract(isodow from (rr.raid_date + rr.time)) < 3 THEN
+                date_trunc('day', (rr.raid_date + rr.time))
+                + make_interval(days => (3 - extract(isodow from (rr.raid_date + rr.time)))::int)
+            ELSE
+                date_trunc('day', (rr.raid_date + rr.time))
+                + make_interval(days => (10 - extract(isodow from (rr.raid_date + rr.time)))::int)
+        END AS next_reset_datetime
     FROM public.raid_resets rr
     INNER JOIN public.ev_raid r ON r.id = rr.raid_id
-    WHERE (raid_date+time) > NOW() + '12 hours'::interval
-      AND (raid_date+time) < NOW() + '1 week'::interval
-      AND (status IS NULL OR (status != 'offline' AND status != 'locked'))
-      AND (r.size > (SELECT count(1) FROM public.ev_raid_participant rp WHERE rp.raid_id = rr.id))
-    ORDER BY (raid_date+time)
-    LIMIT 1
+    WHERE (rr.raid_date + rr.time) > NOW() + '12 hours'::interval
+      AND (rr.raid_date + rr.time) < NOW() + '1 week'::interval
+      AND (rr.status IS NULL OR (rr.status != 'offline' AND rr.status != 'locked'))
+      AND r.size > (SELECT count(1) FROM public.ev_raid_participant rp WHERE rp.raid_id = rr.id AND rp.details->>'status' = 'confirmed')
+    ORDER BY rr.raid_date, rr.time
 )
-, next_reset_boundary AS (
+, member_reset_candidates AS (
     SELECT
-        nur.raid_datetime,
-        CASE
-            WHEN extract(isodow from nur.raid_datetime) < 3 THEN
-                date_trunc('day', nur.raid_datetime)
-                + make_interval(days => (3 - extract(isodow from nur.raid_datetime))::int)
-            ELSE
-                date_trunc('day', nur.raid_datetime)
-                + make_interval(days => (10 - extract(isodow from nur.raid_datetime))::int)
-        END AS next_reset_datetime
-    FROM next_upcoming_raid nur
+        am.member_id,
+        am.user_id,
+        am.character,
+        ur.id AS raid_id,
+        ur.name AS raid_name,
+        ur.raid_date,
+        ur.time,
+        ur.raid_datetime
+    FROM recent_active_members am
+    CROSS JOIN upcoming_resets ur
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM public.ev_raid_participant rp
+        JOIN public.raid_resets rr ON rp.raid_id = rr.id
+        JOIN public.ev_raid r ON r.id = rr.raid_id
+        WHERE rp.member_id = am.member_id
+          AND r.name = ur.name
+          AND (rr.raid_date + rr.time) >= NOW()
+          AND (rr.raid_date + rr.time) <= ur.next_reset_datetime
+    )
 )
-, next_raid_signups AS (
-    SELECT DISTINCT member_id
-    FROM public.ev_raid_participant
-    WHERE raid_id = (SELECT id FROM next_upcoming_raid)
+, first_candidate_per_member AS (
+    SELECT DISTINCT ON (member_id)
+        member_id, user_id, character,
+        raid_id, raid_name, raid_date, time, raid_datetime
+    FROM member_reset_candidates
+    ORDER BY member_id, raid_datetime
 )
 , already_notified AS (
-    SELECT "to"
-    FROM open_campaign.broadlog
-    CROSS JOIN next_upcoming_raid
-    WHERE communication_code = $1::text || '_' || next_upcoming_raid.id::text
-      AND created_at::date >= NOW() - '2 days'::interval
-      AND last_event = 'success'
+    SELECT bl."to", bl.communication_code
+    FROM open_campaign.broadlog bl
+    JOIN upcoming_resets ur ON bl.communication_code = $1::text || '_' || ur.id::text
+    WHERE bl.created_at::date >= NOW() - '2 days'::interval
+      AND bl.last_event = 'success'
 )
-, user_registered_in_raid_until_next_reset AS (
-  SELECT DISTINCT rp.member_id
-    FROM public.ev_raid_participant rp
-    JOIN public.raid_resets rr ON rp.raid_id = rr.id
-    JOIN public.ev_raid r ON r.id = rr.raid_id
-    CROSS JOIN next_upcoming_raid nur
-    CROSS JOIN next_reset_boundary nrb
-    WHERE r.name = nur.name
-      AND (rr.raid_date + rr.time) > nur.raid_datetime
-      AND (rr.raid_date + rr.time) < nrb.next_reset_datetime
-)
-SELECT op.provider_user_id as discord_id,
-        am.character->>'name' as name,
-        -- 0 as account_id,
-        ((r.raid_date + r.time) AT TIME ZONE 'Europe/Madrid'::text) AS raid_date,
-        r.name AS raid_name,
-        r.id AS raid_id
-FROM recent_active_members am
-INNER JOIN ev_auth.oauth_providers op ON op.user_id = am.user_id
-CROSS JOIN next_upcoming_raid r
-WHERE op.provider_user_id NOT IN (SELECT "to" FROM already_notified)
-  AND am.member_id NOT IN (SELECT member_id FROM next_raid_signups)
-  AND op.provider LIKE '%discord%'
-  AND am.member_id NOT IN (SELECT member_id FROM user_registered_in_raid_until_next_reset)
+SELECT
+    op.provider_user_id AS discord_id,
+    fc.character->>'name' AS name,
+    ((fc.raid_date + fc.time) AT TIME ZONE 'Europe/Madrid'::text) AS raid_date,
+    fc.raid_name AS raid_name,
+    fc.raid_id AS raid_id
+FROM first_candidate_per_member fc
+INNER JOIN ev_auth.oauth_providers op ON op.user_id = fc.user_id
+WHERE op.provider LIKE '%discord%'
+  AND NOT EXISTS (
+      SELECT 1 FROM already_notified an
+      WHERE an."to" = op.provider_user_id
+        AND an.communication_code = $1::text || '_' || fc.raid_id::text
+  )
 UNION
-SELECT DISTINCT dm.discord_user_id AS discord_id,
-                m.character ->> 'name' AS name,
-                -- m.wow_account_id AS account_id,
-                ((r.raid_date + r.time) AT TIME ZONE 'Europe/Madrid'::text) AS raid_date,
-                r.name AS raid_name,
-                r.id AS raid_id
-FROM public.discord_members dm
-CROSS JOIN next_upcoming_raid r
-JOIN public.ev_member m ON dm.member_id = m.id
-WHERE m.id IN (SELECT member_id FROM recent_active_members)
-  AND m.id NOT IN (SELECT member_id FROM next_raid_signups)
-  AND dm.discord_user_id NOT IN (SELECT "to" FROM already_notified)
-  AND m.id NOT IN (SELECT member_id FROM user_registered_in_raid_until_next_reset)
+SELECT DISTINCT
+    dm.discord_user_id AS discord_id,
+    fc.character->>'name' AS name,
+    ((fc.raid_date + fc.time) AT TIME ZONE 'Europe/Madrid'::text) AS raid_date,
+    fc.raid_name AS raid_name,
+    fc.raid_id AS raid_id
+FROM first_candidate_per_member fc
+JOIN public.discord_members dm ON dm.member_id = fc.member_id
+WHERE NOT EXISTS (
+    SELECT 1 FROM already_notified an
+    WHERE an."to" = dm.discord_user_id
+      AND an.communication_code = $1::text || '_' || fc.raid_id::text
+)
 ORDER BY name;

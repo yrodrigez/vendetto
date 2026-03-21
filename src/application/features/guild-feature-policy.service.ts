@@ -16,6 +16,7 @@ export class GuildFeaturePolicyService {
             'raidInvitesNotifications',
             'campaigns',
             'sendPrivateMessage',
+            'raidChannelSync',
         ]
     ) { }
     isFeatureEnabled(guildId: string, featureName: FeatureName): boolean {

@@ -4,10 +4,10 @@ import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-sc
 import { FindMembersShouldBeInGuildRoleUsecase } from "@/application/usecases/discord/find-members-should-be-in-guild-role.usecase";
 import { InsertUsersInRoleUsecase } from "@/application/usecases/discord/insert-users-in-role.usecase";
 import { RemoveUsersFromRoleUsecase } from "@/application/usecases/discord/remove-users-from-role.usecase";
-import { Schedule, Step, WorkflowName, WorkflowWithSchedule } from "@/application/workflows/workflow";
+import { Retryable, Schedule, Step, WorkflowName, WorkflowWithSchedule } from "@/application/workflows/workflow";
 
 @WorkflowName('sync-discord-guild-roles')
-@Schedule('*/240 * * * *', { isRunningOnStartup: true }) // Every 4 hours
+@Schedule('*/240 * * * *', { isRunningOnStartup: false }) // Every 4 hours
 export class SyncDiscordGuildRolesWorkflow extends WorkflowWithSchedule<{ guildId: string }> {
     private candidatesInsert: { discordUserId: string, characterName: string }[] = []
     private candidatesRemove: { discordUserId: string, characterName: string }[] = []
@@ -31,6 +31,7 @@ export class SyncDiscordGuildRolesWorkflow extends WorkflowWithSchedule<{ guildI
     }
 
     @Step('sync-members', 1)
+    @Retryable()
     async syncMembers() {
         const { insert, remove } = await this.findMembersShouldBeInGuildRoleUsecase.execute({ guildId: this.input.guildId })
 
@@ -42,6 +43,7 @@ export class SyncDiscordGuildRolesWorkflow extends WorkflowWithSchedule<{ guildI
     }
 
     @Step('remove-members-from-role', 2)
+    @Retryable()
     async removeMembersFromRole() {
         if (this.candidatesRemove.length === 0) {
             console.log(`No members to remove from role "${this.discordRoleName}"`)

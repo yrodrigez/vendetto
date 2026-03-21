@@ -8,7 +8,7 @@ import { DiscordNicknameCandidate } from "@/application/dto/discord-nickname-can
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
 
 @WorkflowName('sync-discord-nicknames-on-login')
-@Schedule('*/15 17-23 * * *', { isRunningOnStartup: true }) // Every 15 minutes between 17:00 and 23:59
+@Schedule('*/15 17-23 * * *', { isRunningOnStartup: false }) // Every 15 minutes between 17:00 and 23:59
 export class SyncDiscordNicknamesWorkflow extends WorkflowWithSchedule<{ guildId: string }> {
     private candidates: DiscordNicknameCandidate[] = []
 

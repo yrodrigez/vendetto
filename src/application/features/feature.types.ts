@@ -9,6 +9,7 @@ export type FeatureName =
     | 'syncClassRoles'
     | 'raidInvitesNotifications'
     | 'campaigns'
+    | 'raidChannelSync'
 
 
 export type FeatureConfig = {

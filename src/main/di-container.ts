@@ -27,6 +27,11 @@ import { FindCandidatesForClassRoleUseCase } from "@/application/usecases/discor
 import { DiscordMembersRepository } from "@/infrastructure/persistance/repositories/discord-members/discord-members.repository";
 import { UsersRepository } from "@/infrastructure/persistance/repositories/users/users.repository";
 import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-membets.usecase";
+import { DiscordChannelAdapter } from "@/infrastructure/discord/discord-channel.adapter";
+import { ResetChannelRepository } from "@/infrastructure/persistance/repositories/reset-channel/reset-channel.repository";
+import { ResetMessagesRepository } from "@/infrastructure/persistance/repositories/reset-messages/reset-messages.repository";
+import { ResetParticipantRepository } from "@/infrastructure/persistance/repositories/reset-participant/reset-participant.repository";
+import { ResetMessagesRealtimeSubscription } from "@/infrastructure/supabase/reset-messages-realtime.subscription";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -70,6 +75,15 @@ export function createContainer() {
         membersRepository,
     );
 
+    const discordChannelAdapter = new DiscordChannelAdapter();
+    const resetChannelRepository = new ResetChannelRepository(databaseClient);
+    const resetMessagesRepository = new ResetMessagesRepository(databaseClient);
+    const resetParticipantRepository = new ResetParticipantRepository(databaseClient);
+    const resetMessagesRealtimeSubscription = new ResetMessagesRealtimeSubscription(
+        discordChannelAdapter,
+        resetChannelRepository,
+        databaseClient,
+    );
 
     return {
         guildSubscriptionService,
@@ -99,5 +113,11 @@ export function createContainer() {
         removeUsersFromRoleUsecase,
         findCandidatesForClassRoleUseCase,
         insertDiscordMembersUseCase,
+        discordMembersRepository,
+        discordChannelAdapter,
+        resetChannelRepository,
+        resetMessagesRepository,
+        resetParticipantRepository,
+        resetMessagesRealtimeSubscription,
     }
 }

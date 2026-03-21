@@ -9,6 +9,7 @@ import { CommandRegistry } from "@/infrastructure/discord/commands/command.regis
 import { getDiscordClient, getGuilds } from "@/infrastructure/discord/discord-api.adapter";
 import { EventsRegistry } from "@/infrastructure/discord/events/events.registry";
 import { UpdateUserNicknameOnMemberJoinEvent } from "@/application/events/update-user-nickname-on-login.event";
+import { ResetChannelMessageEvent } from "@/infrastructure/discord/events/reset-channel-message.event";
 import { createContainer } from "./di-container";
 
 export async function startCommands() {
@@ -22,7 +23,11 @@ export async function startCommands() {
         raidResetRepository,
         findDiscordNicknameCandidatesUseCase,
         updateDiscordNicknameToCharacterNameUseCase,
-        deliveryRepository
+        deliveryRepository,
+        resetChannelRepository,
+        resetMessagesRepository,
+        resetMessagesRealtimeSubscription,
+        databaseClient,
     } = createContainer();
 
     const client = await getDiscordClient();
@@ -41,7 +46,16 @@ export async function startCommands() {
     );
     eventsRegistry.register(updateNicknameEvent);
 
+    const resetChannelMessageEvent = new ResetChannelMessageEvent(
+        resetChannelRepository,
+        resetMessagesRepository,
+        databaseClient,
+    );
+    eventsRegistry.register(resetChannelMessageEvent);
+
     eventsRegistry.applyToClient(client);
+
+    resetMessagesRealtimeSubscription.subscribe();
 
     const commandRegistry = new CommandRegistry();
     const guilds = await getGuilds()
