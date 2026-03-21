@@ -24,7 +24,10 @@ const CATALOG: Record<FeatureName, FeatureConfig> = {
     },
     syncClassRoles: {
         description: "Sync class roles"
-    }
+    },
+    raidChannelSync: {
+        description: "Sync raids to channels"
+    },
 }
 
 export default CATALOG;
