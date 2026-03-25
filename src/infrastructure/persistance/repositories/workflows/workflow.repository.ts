@@ -4,7 +4,7 @@ import {
     type WorkflowRepositoryPort,
     type WorkflowSchedule,
     type WorkflowScheduleStatus
-} from "@/application/ports/outbound/workflow-scheduler-repository.port";
+} from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 
 type WorkflowScheduleRow = {
     id: string

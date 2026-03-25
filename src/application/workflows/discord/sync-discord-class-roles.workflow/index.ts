@@ -1,6 +1,6 @@
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
-import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database/workflow-run-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { FindCandidatesForClassRoleUseCase } from "@/application/usecases/discord/find-candidates-for-class-role.usecase";
 import { InsertUsersInRoleUsecase } from "@/application/usecases/discord/insert-users-in-role.usecase";
 import { RemoveUsersFromRoleUsecase } from "@/application/usecases/discord/remove-users-from-role.usecase";

@@ -1,5 +1,5 @@
-import { ResetChannelRepositoryPort } from "@/application/ports/outbound/reset-channel-repository.port";
-import { ResetMessagesRepositoryPort } from "@/application/ports/outbound/reset-messages-repository.port";
+import { ResetChannelRepositoryPort } from "@/application/ports/outbound/database/reset-channel-repository.port";
+import { ResetMessagesRepositoryPort } from "@/application/ports/outbound/database/reset-messages-repository.port";
 import { DatabaseClient } from "@/infrastructure/database/db";
 import { DiscordEvent } from "./event.interface";
 import { ClientEvents, Events, Message } from "discord.js";

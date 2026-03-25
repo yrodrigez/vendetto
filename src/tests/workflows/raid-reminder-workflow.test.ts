@@ -1,5 +1,5 @@
 import { RaidReminderWorkflow } from "../../application/workflows/discord/raid-reminder/raid-reminder.workflow";
-import { RaidReminderCandidate } from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
+import { RaidReminderCandidate } from "@/application/ports/outbound/database/raid-reminder-candidate-repository.port";
 
 function createMocks() {
     const candidateRepository = { findAll: jest.fn() };

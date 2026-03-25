@@ -1,5 +1,5 @@
 import { DiscordChannelPort } from "@/application/ports/outbound/discord-channel.port";
-import { ResetChannelRepositoryPort } from "@/application/ports/outbound/reset-channel-repository.port";
+import { ResetChannelRepositoryPort } from "@/application/ports/outbound/database/reset-channel-repository.port";
 import { createServerComponentClient } from "@/supabase";
 import { DatabaseClient } from "@/infrastructure/database/db";
 

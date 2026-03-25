@@ -1,7 +1,12 @@
 import { InvitesStartedCommand } from "@/application/commands/invites-started.command";
 import { OffPushToTalkCommand } from "@/application/commands/off-push-to-talk.command";
 import { PingCommand } from "@/application/commands/ping.command";
+import { PlayCommand } from "@/application/commands/play.command";
+import { QueueCommand } from "@/application/commands/queue.command";
+import { SkipCommand } from "@/application/commands/skip.command";
 import { StartPushToTalkCommand } from "@/application/commands/start-push-to-talk.command";
+import { StopCommand } from "@/application/commands/stop.command";
+import { VolumeCommand } from "@/application/commands/volume.command";
 import { InteractionCreateEvent } from "@/application/events/interaction-create.event";
 import { ReadyEvent } from "@/application/events/ready.event";
 import { InvitesStartedWorkflow } from "@/application/workflows/discord/invites-started/invites-started.workflow";
@@ -28,9 +33,12 @@ export async function startCommands() {
         resetMessagesRepository,
         resetMessagesRealtimeSubscription,
         databaseClient,
+        discordPlayerAdapter,
     } = createContainer();
 
     const client = await getDiscordClient();
+    await discordPlayerAdapter.initialize();
+
     const eventsRegistry = new EventsRegistry();
 
     const readyEvent = new ReadyEvent(guildFeaturePolicyService);
@@ -82,6 +90,21 @@ export async function startCommands() {
 
     const pingCommand = new PingCommand();
     commandRegistry.register(pingCommand);
+
+    const playCommand = new PlayCommand(discordPlayerAdapter);
+    commandRegistry.register(playCommand);
+
+    const skipCommand = new SkipCommand(discordPlayerAdapter);
+    commandRegistry.register(skipCommand);
+
+    const stopCommand = new StopCommand(discordPlayerAdapter);
+    commandRegistry.register(stopCommand);
+
+    const queueCommand = new QueueCommand(discordPlayerAdapter);
+    commandRegistry.register(queueCommand);
+
+    const volumeCommand = new VolumeCommand(discordPlayerAdapter);
+    commandRegistry.register(volumeCommand);
 
     await commandRegistry.applyToClient(client);
 

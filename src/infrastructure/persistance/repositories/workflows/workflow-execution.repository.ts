@@ -6,7 +6,7 @@ import {
     type WorkflowActivity,
     type ExecutionStatus,
     type ActivityStatus
-} from "@/application/ports/outbound/workflow-run-repository.port";
+} from "@/application/ports/outbound/database/workflow-run-repository.port";
 
 type ExecutionRow = {
     id: number

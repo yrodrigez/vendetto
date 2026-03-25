@@ -1,9 +1,9 @@
 import { Step, WorkflowName, Schedule, WorkflowWithSchedule, Retryable } from "@/application/workflows/workflow";
-import { DiscordNicknameCandidateRepositoryPort } from "@/application/ports/outbound/discord-nickname-candidate-repository.port";
+import { DiscordNicknameCandidateRepositoryPort } from "@/application/ports/outbound/database/discord-nickname-candidate-repository.port";
 import { DiscordApiPort } from "@/application/ports/outbound/discord-api.port";
 import { GuildFeaturePolicyService } from "@/application/features/guild-feature-policy.service";
-import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database/workflow-run-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { DiscordNicknameCandidate } from "@/application/dto/discord-nickname-candidate.dto";
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
 

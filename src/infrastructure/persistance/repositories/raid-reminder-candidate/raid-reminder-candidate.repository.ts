@@ -3,7 +3,7 @@ import { readResourceFile } from "@/util/file-resource-helper"
 import {
     IRaidReminderCandidateRepositoryPort,
     RaidReminderCandidate
-} from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
+} from "@/application/ports/outbound/database/raid-reminder-candidate-repository.port";
 import { DatabaseClient } from "@/infrastructure/database/db";
 
 function raidReminderCandidateMapper(raidReminderCandidate: any): RaidReminderCandidate {

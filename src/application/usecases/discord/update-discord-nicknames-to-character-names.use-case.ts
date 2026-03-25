@@ -1,6 +1,6 @@
 import { GuildFeaturePolicyService } from "@/application/features/guild-feature-policy.service";
 import { DiscordApiPort } from "@/application/ports/outbound/discord-api.port";
-import { DiscordNicknameCandidateRepositoryPort } from "@/application/ports/outbound/discord-nickname-candidate-repository.port";
+import { DiscordNicknameCandidateRepositoryPort } from "@/application/ports/outbound/database/discord-nickname-candidate-repository.port";
 
 export class UpdateDiscordNicknamesToCharacterNamesUseCase {
     constructor(

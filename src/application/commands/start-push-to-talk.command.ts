@@ -1,7 +1,7 @@
 import { DiscordCommand } from "@/infrastructure/discord/commands/command.interface";
 import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlags, MessageFlags, PermissionFlagsBits } from "discord.js";
 import threadPool from "@/util/thread-pool";
-import { MemberRolesRepositoryPort } from "@/application/ports/outbound/member-roles-repository.port";
+import { MemberRolesRepositoryPort } from "@/application/ports/outbound/database/member-roles-repository.port";
 
 export class StartPushToTalkCommand implements DiscordCommand {
     private readonly allowedRoles = [

@@ -1,4 +1,4 @@
-import { ResetMessagesRepositoryPort } from "@/application/ports/outbound/reset-messages-repository.port";
+import { ResetMessagesRepositoryPort } from "@/application/ports/outbound/database/reset-messages-repository.port";
 import { DatabaseClient } from "@/infrastructure/database/db";
 
 export class ResetMessagesRepository implements ResetMessagesRepositoryPort {

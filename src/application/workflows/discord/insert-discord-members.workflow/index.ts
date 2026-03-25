@@ -1,6 +1,6 @@
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { Schedule, Step, WorkflowName, WorkflowWithSchedule } from "../../workflow";
-import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
+import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database/workflow-run-repository.port";
 import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-membets.usecase";
 
 @WorkflowName('insert-discord-members')

@@ -1,4 +1,4 @@
-import { MemberRepositoryPort } from "@/application/ports/outbound/member-repository.port";
+import { MemberRepositoryPort } from "@/application/ports/outbound/database/member-repository.port";
 
 
 export class FindSelectedCharactersUsecase {

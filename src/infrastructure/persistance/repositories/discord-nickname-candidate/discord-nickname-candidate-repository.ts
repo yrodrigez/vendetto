@@ -1,7 +1,7 @@
 import { DatabaseClient } from "@/infrastructure/database/db";
 import { readResourceFile } from "@/util/file-resource-helper";
 import { DiscordNicknameCandidateMapper } from "./discord-nickname-candidate.mapper";
-import { DiscordNicknameCandidateRepositoryPort } from "@/application/ports/outbound/discord-nickname-candidate-repository.port";
+import { DiscordNicknameCandidateRepositoryPort } from "@/application/ports/outbound/database/discord-nickname-candidate-repository.port";
 
 export class DiscordNicknameCandidateRepository implements DiscordNicknameCandidateRepositoryPort {
     constructor(private dbClient: DatabaseClient) { }

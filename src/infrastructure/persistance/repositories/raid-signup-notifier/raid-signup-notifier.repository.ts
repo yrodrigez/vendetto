@@ -4,7 +4,7 @@ import {
     IRaidSignupNotifierRepositoryPort,
     RaidRoleCountsDto,
     RaidSignupDto
-} from "@/application/ports/outbound/raid-signup-notifier-repository.port";
+} from "@/application/ports/outbound/database/raid-signup-notifier-repository.port";
 
 type RaidSignupRow = {
     member_id: string;

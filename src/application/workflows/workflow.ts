@@ -1,6 +1,6 @@
 import 'reflect-metadata'
-import { WorkflowRunRepositoryPort as WorkflowExecutionRepositoryPort, type WorkflowExecution } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRunRepositoryPort as WorkflowExecutionRepositoryPort, type WorkflowExecution } from "@/application/ports/outbound/database/workflow-run-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { CronExpressionParser } from 'cron-parser'
 
 const STEPS_METADATA_KEY = Symbol('workflow:steps')

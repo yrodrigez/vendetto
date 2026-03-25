@@ -32,6 +32,7 @@ import { ResetChannelRepository } from "@/infrastructure/persistance/repositorie
 import { ResetMessagesRepository } from "@/infrastructure/persistance/repositories/reset-messages/reset-messages.repository";
 import { ResetParticipantRepository } from "@/infrastructure/persistance/repositories/reset-participant/reset-participant.repository";
 import { ResetMessagesRealtimeSubscription } from "@/infrastructure/supabase/reset-messages-realtime.subscription";
+import { DiscordPlayerAdapter } from "@/infrastructure/discord/discord-player.adapter";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -85,6 +86,8 @@ export function createContainer() {
         databaseClient,
     );
 
+    const discordPlayerAdapter = new DiscordPlayerAdapter();
+
     return {
         guildSubscriptionService,
         guildFeaturePolicyService,
@@ -119,5 +122,6 @@ export function createContainer() {
         resetMessagesRepository,
         resetParticipantRepository,
         resetMessagesRealtimeSubscription,
+        discordPlayerAdapter,
     }
 }

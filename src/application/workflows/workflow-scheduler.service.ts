@@ -1,4 +1,4 @@
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { WorkflowWithSchedule } from "@/application/workflows/workflow";
 import cron from 'node-cron';
 import { DiscordChannelLoggerPort } from '../ports/outbound/discord-channel-logger.port';

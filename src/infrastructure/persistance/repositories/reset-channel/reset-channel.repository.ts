@@ -1,4 +1,4 @@
-import { ResetChannel, ResetChannelRepositoryPort } from "@/application/ports/outbound/reset-channel-repository.port";
+import { ResetChannel, ResetChannelRepositoryPort } from "@/application/ports/outbound/database/reset-channel-repository.port";
 import { DatabaseClient } from "@/infrastructure/database/db";
 
 function resetChannelMapper(row: any): ResetChannel {

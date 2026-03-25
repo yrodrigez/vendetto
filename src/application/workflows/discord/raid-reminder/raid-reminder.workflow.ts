@@ -1,8 +1,8 @@
 import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/delivery-repository.port";
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
-import { IRaidReminderCandidateRepositoryPort, RaidReminderCandidate } from "@/application/ports/outbound/raid-reminder-candidate-repository.port";
-import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { IRaidReminderCandidateRepositoryPort, RaidReminderCandidate } from "@/application/ports/outbound/database/raid-reminder-candidate-repository.port";
+import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database/workflow-run-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { ProcessDeliveryUseCase } from "@/application/usecases/delivery/ProcessDeliveryUseCase";
 import {
     Retryable,

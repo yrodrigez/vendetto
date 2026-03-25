@@ -1,7 +1,7 @@
 import { DiscordMembersRepositoryPort } from "@/application/ports/outbound/database/discord-members-repository.port";
 import { UsersRepositoryPort } from "@/application/ports/outbound/database/users-repository.port";
 import { DiscordApiPort } from "@/application/ports/outbound/discord-api.port";
-import { MemberRepositoryPort } from "@/application/ports/outbound/member-repository.port";
+import { MemberRepositoryPort } from "@/application/ports/outbound/database/member-repository.port";
 
 export class InsertDiscordMembersUseCase {
     constructor(

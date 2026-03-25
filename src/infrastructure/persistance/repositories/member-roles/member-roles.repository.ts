@@ -1,4 +1,4 @@
-import { MemberRolesRepositoryPort } from "@/application/ports/outbound/member-roles-repository.port";
+import { MemberRolesRepositoryPort } from "@/application/ports/outbound/database/member-roles-repository.port";
 import { DatabaseClient } from "@/infrastructure/database/db";
 
 export class MemberRolesRepository implements MemberRolesRepositoryPort {

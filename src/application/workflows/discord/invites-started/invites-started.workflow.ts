@@ -1,6 +1,6 @@
 import { DeliveryRepositoryPort } from "@/application/ports/outbound/delivery/delivery-repository.port";
-import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database/workflow-run-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { ProcessDeliveryUseCase } from "@/application/usecases/delivery/ProcessDeliveryUseCase";
 import { Retryable, Step, WorkflowName, WorkflowWithRetries } from "@/application/workflows/workflow";
 import { RaidResetRepository } from "@/domain/raid/raid-reset.repository";

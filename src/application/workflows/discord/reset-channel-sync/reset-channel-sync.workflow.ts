@@ -1,9 +1,9 @@
 import { DiscordChannelPort } from "@/application/ports/outbound/discord-channel.port";
 import { DiscordChannelLoggerPort } from "@/application/ports/outbound/discord-channel-logger.port";
-import { ResetChannelRepositoryPort } from "@/application/ports/outbound/reset-channel-repository.port";
-import { ActiveReset, ResetParticipantRepositoryPort } from "@/application/ports/outbound/reset-participant-repository.port";
-import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/workflow-run-repository.port";
-import { WorkflowRepositoryPort } from "@/application/ports/outbound/workflow-scheduler-repository.port";
+import { ResetChannelRepositoryPort } from "@/application/ports/outbound/database/reset-channel-repository.port";
+import { ActiveReset, ResetParticipantRepositoryPort } from "@/application/ports/outbound/database/reset-participant-repository.port";
+import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database/workflow-run-repository.port";
+import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import {
     Retryable,
     Schedule,
@@ -11,7 +11,7 @@ import {
     WorkflowName,
     WorkflowWithSchedule
 } from "@/application/workflows/workflow";
-import moment from "moment";
+import moment from "moment-timezone";
 
 export type ResetChannelSyncInput = {
     guildId: string;
@@ -49,11 +49,8 @@ export class ResetChannelSyncWorkflow extends WorkflowWithSchedule<ResetChannelS
             const existing = await this.resetChannelRepository.findByResetId(reset.id);
             if (existing) continue;
 
-            const raidDatetime = moment(reset.raid_date).set({
-                hour: parseInt(reset.time.split(':')[0]),
-                minute: parseInt(reset.time.split(':')[1]),
-                second: parseInt(reset.time.split(':')[2] ?? '0'),
-            });
+            const [h, m, s] = reset.time.split(':').map(Number);
+            const raidDatetime = moment(reset.raid_date).tz('Europe/Madrid').set({ hour: h, minute: m, second: s ?? 0 });
             const channelName = `${reset.raid.name}-${raidDatetime.format('DD-MMM-ha')}`.toLowerCase().replace(/\s+/g, '-');
             const channelId = await this.discordChannel.createTextChannel(this.input.guildId, {
                 name: channelName,
@@ -86,7 +83,7 @@ export class ResetChannelSyncWorkflow extends WorkflowWithSchedule<ResetChannelS
                 if (!currentMemberSet.has(subscriber.discordUserId)) {
                     await this.discordChannel.addMemberToChannel(channel.channelId, subscriber.discordUserId);
                     const raidTime = channel.raidDatetime
-                        ? moment(channel.raidDatetime).format('dddd, Do [at] h:mm A')
+                        ? moment(channel.raidDatetime).tz('Europe/Madrid').format('dddd, Do [at] h:mm A')
                         : '';
                     const greeting = raidTime
                         ? `*Blub!* 🐙 <@${subscriber.discordUserId}> has joined the raid! **${channel.raidName}** starts on **${raidTime}** — don't be late or we're pulling without you.`

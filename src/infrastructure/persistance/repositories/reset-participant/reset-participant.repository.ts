@@ -1,4 +1,4 @@
-import { ActiveReset, ResetParticipantRepositoryPort, ResetSubscribedMember } from "@/application/ports/outbound/reset-participant-repository.port";
+import { ActiveReset, ResetParticipantRepositoryPort, ResetSubscribedMember } from "@/application/ports/outbound/database/reset-participant-repository.port";
 import { DatabaseClient } from "@/infrastructure/database/db";
 
 export class ResetParticipantRepository implements ResetParticipantRepositoryPort {
