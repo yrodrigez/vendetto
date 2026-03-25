@@ -1,0 +1,6 @@
+services:
+  vendetto:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
