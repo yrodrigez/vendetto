@@ -7,6 +7,7 @@ import { SkipCommand } from "@/application/commands/skip.command";
 import { StartPushToTalkCommand } from "@/application/commands/start-push-to-talk.command";
 import { StopCommand } from "@/application/commands/stop.command";
 import { VolumeCommand } from "@/application/commands/volume.command";
+import { SuggestSrCommand } from "@/application/commands/suggest-sr.command";
 import { InteractionCreateEvent } from "@/application/events/interaction-create.event";
 import { ReadyEvent } from "@/application/events/ready.event";
 import { InvitesStartedWorkflow } from "@/application/workflows/discord/invites-started/invites-started.workflow";
@@ -34,6 +35,9 @@ export async function startCommands() {
         resetMessagesRealtimeSubscription,
         databaseClient,
         discordPlayerAdapter,
+        suggestSrRepository,
+        ollamaService,
+        bisSearchService,
     } = createContainer();
 
     const client = await getDiscordClient();
@@ -105,6 +109,9 @@ export async function startCommands() {
 
     const volumeCommand = new VolumeCommand(discordPlayerAdapter);
     commandRegistry.register(volumeCommand);
+
+    const suggestSrCommand = new SuggestSrCommand(suggestSrRepository, ollamaService, bisSearchService);
+    commandRegistry.register(suggestSrCommand);
 
     await commandRegistry.applyToClient(client);
 

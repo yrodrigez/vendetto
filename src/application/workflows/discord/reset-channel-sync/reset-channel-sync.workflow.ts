@@ -12,6 +12,7 @@ import {
     WorkflowWithSchedule
 } from "@/application/workflows/workflow";
 import moment from "moment-timezone";
+import { DiscordApiPort } from "@/application/ports/outbound/discord-api.port";
 
 export type ResetChannelSyncInput = {
     guildId: string;
@@ -23,6 +24,7 @@ export class ResetChannelSyncWorkflow extends WorkflowWithSchedule<ResetChannelS
     private activeResets: ActiveReset[] = [];
 
     constructor(
+        private readonly discordClient: DiscordApiPort,
         private readonly discordChannel: DiscordChannelPort,
         private readonly resetChannelRepository: ResetChannelRepositoryPort,
         private readonly raidResetRepository: ResetParticipantRepositoryPort,
@@ -77,10 +79,12 @@ export class ResetChannelSyncWorkflow extends WorkflowWithSchedule<ResetChannelS
         for (const channel of trackedChannels) {
             const subscribers = await this.participantRepository.findSubscribedMembers(channel.resetId);
             const currentMembers = await this.discordChannel.getChannelMembers(channel.channelId);
+            const guildMembers = await this.discordClient.findAllMembers(this.input.guildId);
             const currentMemberSet = new Set(currentMembers);
 
             for (const subscriber of subscribers) {
-                if (!currentMemberSet.has(subscriber.discordUserId)) {
+                if (!currentMemberSet.has(subscriber.discordUserId) && guildMembers.some(m => m.id === subscriber.discordUserId)) {
+                    console.log(`Adding subscriber ${subscriber.discordUserId} to channel ${channel.channelId}`);
                     await this.discordChannel.addMemberToChannel(channel.channelId, subscriber.discordUserId);
                     const raidTime = channel.raidDatetime
                         ? moment(channel.raidDatetime).tz('Europe/Madrid').format('dddd, Do [at] h:mm A')
@@ -89,6 +93,8 @@ export class ResetChannelSyncWorkflow extends WorkflowWithSchedule<ResetChannelS
                         ? `*Blub!* 🐙 <@${subscriber.discordUserId}> has joined the raid! **${channel.raidName}** starts on **${raidTime}** — don't be late or we're pulling without you.`
                         : `*Blub!* 🐙 <@${subscriber.discordUserId}> has joined the raid! **${channel.raidName}** awaits.`;
                     await this.discordChannel.sendMessage(channel.channelId, greeting);
+                } else if (!guildMembers.some(m => m.id === subscriber.discordUserId)) {
+                    console.log(`Subscriber ${subscriber.discordUserId} not found in guild, skipping channel ${channel.channelId}`);
                 }
             }
         }

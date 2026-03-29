@@ -57,7 +57,7 @@ export class DiscordPlayerAdapter {
         const result = await this.player.play(voiceChannel, query, {
             nodeOptions: {
                 selfDeaf: false,
-                volume: 100,
+                volume: 3,
                 leaveOnEmpty: true,
                 leaveOnEmptyCooldown: 300_000,
                 leaveOnEnd: true,

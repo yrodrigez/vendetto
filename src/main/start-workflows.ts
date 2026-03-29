@@ -118,6 +118,7 @@ export async function startWorkflows() {
 
         if (guildFeaturePolicyService.isFeatureEnabled(guild.id, "raidChannelSync")) {
             const resetChannelSyncWorkflow = new ResetChannelSyncWorkflow(
+                discordApi,
                 discordChannelAdapter,
                 resetChannelRepository,
                 resetParticipantRepository,

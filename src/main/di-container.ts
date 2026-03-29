@@ -33,6 +33,9 @@ import { ResetMessagesRepository } from "@/infrastructure/persistance/repositori
 import { ResetParticipantRepository } from "@/infrastructure/persistance/repositories/reset-participant/reset-participant.repository";
 import { ResetMessagesRealtimeSubscription } from "@/infrastructure/supabase/reset-messages-realtime.subscription";
 import { DiscordPlayerAdapter } from "@/infrastructure/discord/discord-player.adapter";
+import { SuggestSrRepository } from "@/infrastructure/persistance/repositories/suggest-sr/suggest-sr.repository";
+import { OllamaService } from "@/infrastructure/ollama.service";
+import { BisSearchService } from "@/infrastructure/bis-search.service";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -88,6 +91,10 @@ export function createContainer() {
 
     const discordPlayerAdapter = new DiscordPlayerAdapter();
 
+    const suggestSrRepository = new SuggestSrRepository(databaseClient);
+    const ollamaService = new OllamaService();
+    const bisSearchService = new BisSearchService();
+
     return {
         guildSubscriptionService,
         guildFeaturePolicyService,
@@ -123,5 +130,8 @@ export function createContainer() {
         resetParticipantRepository,
         resetMessagesRealtimeSubscription,
         discordPlayerAdapter,
+        suggestSrRepository,
+        ollamaService,
+        bisSearchService,
     }
 }

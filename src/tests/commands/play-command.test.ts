@@ -60,10 +60,14 @@ describe('PlayCommand', () => {
         expect(interaction.deferReply).toHaveBeenCalled();
         expect(adapter.play).toHaveBeenCalledWith(voiceChannel, 'Never Gonna Give You Up');
         expect(interaction.editReply).toHaveBeenCalledWith(
-            expect.stringContaining('Now playing'),
+            expect.objectContaining({
+                content: expect.stringContaining('Now playing'),
+            })
         );
         expect(interaction.editReply).toHaveBeenCalledWith(
-            expect.stringContaining('Test Song'),
+            expect.objectContaining({
+                content: expect.stringContaining('Test Song'),
+            })
         );
     });
 
@@ -80,10 +84,14 @@ describe('PlayCommand', () => {
         await command.execute(interaction);
 
         expect(interaction.editReply).toHaveBeenCalledWith(
-            expect.stringContaining('Added to queue'),
+            expect.objectContaining({
+                content: expect.stringContaining('Added to queue'),
+            })
         );
         expect(interaction.editReply).toHaveBeenCalledWith(
-            expect.stringContaining('Queued Song'),
+            expect.objectContaining({
+                content: expect.stringContaining('Queued Song'),
+            })
         );
     });
 
@@ -97,7 +105,9 @@ describe('PlayCommand', () => {
         await command.execute(interaction);
 
         expect(interaction.editReply).toHaveBeenCalledWith(
-            expect.stringContaining('No results found'),
+            expect.objectContaining({
+                content: expect.stringContaining('Error playing track: No results found'),
+            })
         );
     });
 });

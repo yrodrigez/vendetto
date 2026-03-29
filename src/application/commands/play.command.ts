@@ -10,7 +10,7 @@ export class PlayCommand implements DiscordCommand {
             option.setName('query').setDescription('Song name or YouTube URL').setRequired(true)
         );
 
-    constructor(private readonly playerAdapter: DiscordPlayerAdapter) {}
+    constructor(private readonly playerAdapter: DiscordPlayerAdapter) { }
 
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {
         const voiceChannel = (interaction.member as GuildMember)?.voice?.channel as VoiceBasedChannel | null;
@@ -24,16 +24,20 @@ export class PlayCommand implements DiscordCommand {
         }
 
         const query = interaction.options.getString('query', true);
-        await interaction.deferReply();
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
             const { track, addedToQueue } = await this.playerAdapter.play(voiceChannel, query);
             const message = addedToQueue
-                ? `Added to queue: **${track.title}**\n${track.url}`
-                : `Now playing: **${track.title}**\n${track.url}`;
-            await interaction.editReply(message);
+                ? `Added to queue: **${track.title}**`
+                : `Now playing: **${track.title}**`;
+            await interaction.editReply(
+                { content: message }
+            )
         } catch (error: any) {
-            await interaction.editReply(`Failed to play: ${error?.message ?? 'Unknown error'}`);
+            await interaction.editReply({
+                content: `Error playing track: ${error.message}`,
+            });
         }
     }
 }

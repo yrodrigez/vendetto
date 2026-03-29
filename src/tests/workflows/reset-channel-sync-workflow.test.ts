@@ -35,7 +35,12 @@ function createMocks() {
         updateStatus: jest.fn(),
     };
 
+    const discordApiPort = {
+        findAllMembers: jest.fn().mockResolvedValue([]),
+    };
+
     return {
+        discordApiPort,
         discordChannel,
         resetChannelRepository,
         raidResetRepository,
@@ -48,6 +53,7 @@ function createMocks() {
 
 function createWorkflow(mocks: ReturnType<typeof createMocks>) {
     const workflow = new ResetChannelSyncWorkflow(
+        mocks.discordApiPort as any,
         mocks.discordChannel as any,
         mocks.resetChannelRepository as any,
         mocks.raidResetRepository as any,
@@ -124,6 +130,11 @@ describe('ResetChannelSyncWorkflow', () => {
                 { discordUserId: 'discord-3' },
             ]);
             mocks.discordChannel.getChannelMembers.mockResolvedValue(['discord-1']);
+            mocks.discordApiPort.findAllMembers.mockResolvedValue([
+                { id: 'discord-1' },
+                { id: 'discord-2' },
+                { id: 'discord-3' },
+            ]);
 
             await (workflow as any).syncSubscribers();
 
@@ -153,10 +164,36 @@ describe('ResetChannelSyncWorkflow', () => {
                 { discordUserId: 'discord-1' },
             ]);
             mocks.discordChannel.getChannelMembers.mockResolvedValue(['discord-1']);
+            mocks.discordApiPort.findAllMembers.mockResolvedValue([
+                { id: 'discord-1' },
+            ]);
 
             await (workflow as any).syncSubscribers();
 
             expect(mocks.discordChannel.addMemberToChannel).not.toHaveBeenCalled();
+        });
+
+        test('skips subscribers not found in guild', async () => {
+            const mocks = createMocks();
+            const workflow = createWorkflow(mocks);
+
+            mocks.resetChannelRepository.findAllActive.mockResolvedValue([
+                { id: 1, resetId: 'reset-1', channelId: 'channel-123', guildId: 'guild-1', raidName: 'Karazhan', raidDatetime: '2026-03-22T20:00:00' },
+            ]);
+            mocks.participantRepository.findSubscribedMembers.mockResolvedValue([
+                { discordUserId: 'discord-1' },
+                { discordUserId: 'discord-unknown' },
+            ]);
+            mocks.discordChannel.getChannelMembers.mockResolvedValue([]);
+            mocks.discordApiPort.findAllMembers.mockResolvedValue([
+                { id: 'discord-1' },
+            ]);
+
+            await (workflow as any).syncSubscribers();
+
+            expect(mocks.discordChannel.addMemberToChannel).toHaveBeenCalledTimes(1);
+            expect(mocks.discordChannel.addMemberToChannel).toHaveBeenCalledWith('channel-123', 'discord-1');
+            expect(mocks.discordChannel.addMemberToChannel).not.toHaveBeenCalledWith('channel-123', 'discord-unknown');
         });
     });
 
