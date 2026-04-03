@@ -34,5 +34,6 @@ RUN cd node_modules/.pnpm/youtube-dl-exec@*/node_modules/youtube-dl-exec && node
 COPY --from=builder /app/dist ./dist
 
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
+ENV TZ=Europe/Madrid
 
 CMD ["node", "dist/index.js"]

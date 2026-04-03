@@ -44,7 +44,7 @@ export class InvitesStartedWorkflow extends WorkflowWithRetries<InvitesStartedWo
             const diff = startDate.getTime() - now.getTime();
             const diffMinutes = Math.floor(diff / 1000 / 60);
             if (diffMinutes > 120) {
-                throw new Error('This reset is more than 2 hours away');
+                throw new Error(`This reset is more than 2 hours away (starts in ${diffMinutes} minutes)`);
             }
         }
     }

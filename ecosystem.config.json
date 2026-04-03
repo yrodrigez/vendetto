@@ -10,10 +10,12 @@
             "watch": false,
             "max_memory_restart": "500M",
             "env": {
-                "NODE_ENV": "development"
+                "NODE_ENV": "development",
+                "TZ": "Europe/Madrid"
             },
             "env_production": {
                 "NODE_ENV": "production",
+                "TZ": "Europe/Madrid",
                 "SUPABASE_URL": "${SUPABASE_URL}",
                 "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}"
             },
