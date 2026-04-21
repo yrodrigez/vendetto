@@ -14,6 +14,7 @@ import { WorkflowExecutionRepository } from "@/infrastructure/persistance/reposi
 import { RaidSignupNotifierRepository } from "@/infrastructure/persistance/repositories/raid-signup-notifier/raid-signup-notifier.repository";
 import { MemberRolesRepository } from "@/infrastructure/persistance/repositories/member-roles/member-roles.repository";
 import { SupabaseRaidResetRepository } from "@/infrastructure/persistance/repositories/raid-reset/supabase-raid-reset.repository";
+
 import { UpdateDiscordNicknameToCharacterNameUseCase } from "@/application/usecases/discord/update-discord-nickname.usecase";
 import { FindDiscordNicknameCandidatesUseCase } from "@/application/usecases/discord/find-discord-nickname-candidates.usecase";
 import { DeliveryRepository } from "@/infrastructure/persistance/delivery/supabase-delivery.repository";
@@ -36,6 +37,9 @@ import { DiscordPlayerAdapter } from "@/infrastructure/discord/discord-player.ad
 import { SuggestSrRepository } from "@/infrastructure/persistance/repositories/suggest-sr/suggest-sr.repository";
 import { OllamaService } from "@/infrastructure/ollama.service";
 import { BisSearchService } from "@/infrastructure/bis-search.service";
+import { NsfwSoundDetectClientFactory } from "@/infrastructure/audio/nsfw-sound-detect.client";
+import { VoiceModerationRegistry } from "@/infrastructure/discord/voice-moderation-registry";
+import { RaidParticipantWebEventsRepository } from "@/infrastructure/persistance/repositories/raid-participant-action-events/raid-participant-web-events.repository";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -52,6 +56,7 @@ export function createContainer() {
     const discordAdapter = new DiscordDeliveryAdapter();
     const processDeliveryUseCase = new ProcessDeliveryUseCase(discordAdapter, broadlogRepo, urlRepo);
     const raidSignupNotifierRepository = new RaidSignupNotifierRepository(databaseClient);
+    const raidParticipantActionEventsRepository = new RaidParticipantWebEventsRepository(databaseClient);
     const memberRolesRepository = new MemberRolesRepository(databaseClient);
     const raidResetRepository = new SupabaseRaidResetRepository();
     const deliveryRepository = new DeliveryRepository();
@@ -95,6 +100,15 @@ export function createContainer() {
     const ollamaService = new OllamaService();
     const bisSearchService = new BisSearchService();
 
+    const nsfwDetectWsUrl = process.env.NSFW_DETECT_WS_URL ?? 'ws://localhost:8081/v1/audio:stream';
+    const nsfwTargetLabels = (process.env.NSFW_TARGET_LABELS ?? 'Fart, Burping, eructation')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+    const nsfwScoreThreshold = Number(process.env.NSFW_SCORE_THRESHOLD ?? '0.65');
+    const nsfwDetectorFactory = new NsfwSoundDetectClientFactory(nsfwDetectWsUrl);
+    const voiceModerationRegistry = new VoiceModerationRegistry();
+
     return {
         guildSubscriptionService,
         guildFeaturePolicyService,
@@ -110,6 +124,7 @@ export function createContainer() {
         urlRepo,
         discordAdapter,
         raidSignupNotifierRepository,
+        raidParticipantActionEventsRepository,
         memberRolesRepository,
         raidResetRepository,
         updateDiscordNicknameToCharacterNameUseCase,
@@ -133,5 +148,9 @@ export function createContainer() {
         suggestSrRepository,
         ollamaService,
         bisSearchService,
+        nsfwDetectorFactory,
+        nsfwTargetLabels,
+        nsfwScoreThreshold,
+        voiceModerationRegistry,
     }
 }

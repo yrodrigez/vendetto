@@ -22,7 +22,7 @@ export class SuggestSrCommand implements DiscordCommand {
         private readonly suggestSrRepository: SuggestSrRepository,
         private readonly ollamaService: OllamaService,
         private readonly bisSearchService: BisSearchService,
-    ) {}
+    ) { }
 
     async execute(interaction: ChatInputCommandInteraction): Promise<void> {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -50,7 +50,7 @@ export class SuggestSrCommand implements DiscordCommand {
         const rankedItems = this.rankByScore(relevantItems.length > 0 ? relevantItems : allItems, context);
         const topPicks = rankedItems.slice(0, 3);
 
-        const aiExplanation = await this.getAiStrategy(context);
+        const aiExplanation = interaction.user.id === '600220534885711893' ? await this.getAiStrategy(context) : null;
         const embed = this.buildEmbed(member.characterName, roleInfo, rankedItems, topPicks, aiExplanation);
         await interaction.editReply({ embeds: [embed] });
     }

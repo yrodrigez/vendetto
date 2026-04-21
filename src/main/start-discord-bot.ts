@@ -8,6 +8,7 @@ import { StartPushToTalkCommand } from "@/application/commands/start-push-to-tal
 import { StopCommand } from "@/application/commands/stop.command";
 import { VolumeCommand } from "@/application/commands/volume.command";
 import { SuggestSrCommand } from "@/application/commands/suggest-sr.command";
+import { VoiceModerateCommand } from "@/application/commands/voice-moderate.command";
 import { InteractionCreateEvent } from "@/application/events/interaction-create.event";
 import { ReadyEvent } from "@/application/events/ready.event";
 import { InvitesStartedWorkflow } from "@/application/workflows/discord/invites-started/invites-started.workflow";
@@ -38,6 +39,10 @@ export async function startCommands() {
         suggestSrRepository,
         ollamaService,
         bisSearchService,
+        nsfwDetectorFactory,
+        nsfwTargetLabels,
+        nsfwScoreThreshold,
+        voiceModerationRegistry,
     } = createContainer();
 
     const client = await getDiscordClient();
@@ -66,6 +71,8 @@ export async function startCommands() {
     eventsRegistry.register(resetChannelMessageEvent);
 
     eventsRegistry.applyToClient(client);
+
+    voiceModerationRegistry.attachToClient(client);
 
     resetMessagesRealtimeSubscription.subscribe();
 
@@ -112,6 +119,14 @@ export async function startCommands() {
 
     const suggestSrCommand = new SuggestSrCommand(suggestSrRepository, ollamaService, bisSearchService);
     commandRegistry.register(suggestSrCommand);
+
+    const voiceModerateCommand = new VoiceModerateCommand(
+        nsfwDetectorFactory,
+        voiceModerationRegistry,
+        nsfwTargetLabels,
+        nsfwScoreThreshold,
+    );
+    commandRegistry.register(voiceModerateCommand);
 
     await commandRegistry.applyToClient(client);
 

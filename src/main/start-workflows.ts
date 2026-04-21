@@ -5,6 +5,7 @@ import { getGuilds } from "@/infrastructure/discord/discord-api.adapter";
 import { RaidReminderWorkflow } from "@/application/workflows/discord/raid-reminder/raid-reminder.workflow";
 
 import { RaidSignupNotifierWorkflow } from "@/application/workflows/discord/raid-signup-notifier/raid-signup-notifier.workflow";
+import { RaidParticipantActionNotifierWorkflow } from "@/application/workflows/discord/raid-participant-action-notifier/raid-participant-action-notifier.workflow";
 import { SyncDiscordGuildRolesWorkflow } from "@/application/workflows/discord/sync-discord-guild-roles.workflow";
 import { SyncDiscordClassRolesWorkflow } from "@/application/workflows/discord/sync-discord-class-roles.workflow";
 import { createContainer } from "./di-container";
@@ -22,6 +23,7 @@ export async function startWorkflows() {
         logger,
         processDeliveryUseCase,
         raidSignupNotifierRepository,
+        raidParticipantActionEventsRepository,
         raidReminderCandidateRepository,
         deliveryRepository,
         seedMemberRepository,
@@ -78,6 +80,18 @@ export async function startWorkflows() {
             )
             await scheduler.registerWorkflow(raidSignupNotifierWorkflow, { seedList: seeds })
             console.log(`Registered workflow "${raidSignupNotifierWorkflow.name}" for guild ${guild.id}`)
+
+            const raidParticipantActionNotifierWorkflow = new RaidParticipantActionNotifierWorkflow(
+                raidParticipantActionEventsRepository,
+                processDeliveryUseCase,
+                logger,
+                workflowExecutionRepository,
+                workflowRepository,
+                guild.id,
+                deliveryRepository
+            )
+            await scheduler.registerWorkflow(raidParticipantActionNotifierWorkflow, { guildId: guild.id, seedList: seeds })
+            console.log(`Registered workflow "${raidParticipantActionNotifierWorkflow.name}" for guild ${guild.id}`)
         }
         if (guildFeaturePolicyService.isFeatureEnabled(guild.id, "syncClassRoles")) {
             const syncClassRolesWorkflow = new SyncDiscordClassRolesWorkflow(
