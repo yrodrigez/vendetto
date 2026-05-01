@@ -9,6 +9,7 @@ export interface RaidReset {
     end_date: string;
     time: string;
     end_time: string;
+    reservations_closed: boolean;
 }
 
 export interface RaidParticipant {

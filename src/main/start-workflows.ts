@@ -11,6 +11,7 @@ import { SyncDiscordClassRolesWorkflow } from "@/application/workflows/discord/s
 import { createContainer } from "./di-container";
 import { InsertDiscordMembersWorkflow } from "@/application/workflows/discord/insert-discord-members.workflow";
 import { ResetChannelSyncWorkflow } from "@/application/workflows/discord/reset-channel-sync/reset-channel-sync.workflow";
+import { CloseReservationsWorkflow } from "@/application/workflows/discord/close-reservations/close-reservations.workflow";
 
 
 export async function startWorkflows() {
@@ -35,6 +36,7 @@ export async function startWorkflows() {
         discordChannelAdapter,
         resetChannelRepository,
         resetParticipantRepository,
+        raidResetRepository,
     } = createContainer()
 
 
@@ -144,6 +146,21 @@ export async function startWorkflows() {
             )
             await scheduler.registerWorkflow(resetChannelSyncWorkflow, { guildId: guild.id })
             console.log(`Registered workflow "${resetChannelSyncWorkflow.name}" for guild ${guild.id}`)
+        }
+
+        // Add CloseReservationsWorkflow
+        if (guildFeaturePolicyService.isFeatureEnabled(guild.id, "closeReservations")) {
+            const closeReservationsWorkflow = new CloseReservationsWorkflow(
+                raidResetRepository,
+                resetChannelRepository,
+                discordChannelAdapter,
+                logger,
+                workflowExecutionRepository,
+                workflowRepository,
+                guild.id,
+            )
+            await scheduler.registerWorkflow(closeReservationsWorkflow, { guildId: guild.id })
+            console.log(`Registered workflow "${closeReservationsWorkflow.name}" for guild ${guild.id}`)
         }
     }
 

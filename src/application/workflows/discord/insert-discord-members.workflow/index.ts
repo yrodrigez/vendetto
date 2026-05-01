@@ -4,7 +4,7 @@ import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database
 import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-membets.usecase";
 
 @WorkflowName('insert-discord-members')
-@Schedule('0 13 * * *', { isRunningOnStartup: false }) // Every day at 1 PM
+@Schedule('* */4 * * *', { isRunningOnStartup: false }) // Every 4 hours
 export class InsertDiscordMembersWorkflow extends WorkflowWithSchedule<{ guildId: string }> {
     constructor(
         readonly workflowRepository: WorkflowRepositoryPort,

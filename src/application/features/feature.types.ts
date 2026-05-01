@@ -10,6 +10,7 @@ export type FeatureName =
     | 'raidInvitesNotifications'
     | 'campaigns'
     | 'raidChannelSync'
+    | 'closeReservations';
 
 
 export type FeatureConfig = {

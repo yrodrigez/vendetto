@@ -7,7 +7,7 @@ export class SupabaseRaidResetRepository implements RaidResetRepository {
         const supabase = createServerComponentClient();
         const { data: reset, error } = await supabase
             .from('raid_resets')
-            .select('id, name, raid:ev_raid(name, id), raid_date, end_date, time, end_time')
+            .select('id, name, raid:ev_raid(name, id), raid_date, end_date, time, end_time, reservations_closed')
             .eq('id', resetId)
             .single<{
                 id: string,
@@ -19,7 +19,8 @@ export class SupabaseRaidResetRepository implements RaidResetRepository {
                 raid_date: string,
                 end_date: string,
                 time: string,
-                end_time: string
+                end_time: string,
+                reservations_closed: boolean
             }>();
 
         if (error) {
@@ -65,5 +66,34 @@ export class SupabaseRaidResetRepository implements RaidResetRepository {
             //@ts-ignore
             raidName: participants[0].raid.name
         }));
+    }
+
+    async findOpenReservations(): Promise<RaidReset[]> {
+        const supabase = createServerComponentClient();
+        const { data: resets, error } = await supabase
+            .from('raid_resets')
+            .select('id, name, raid_date, time, reservations_closed')
+            .eq('reservations_closed', false)
+            .overrideTypes<RaidReset[]>();
+
+        if (error) {
+            console.error('Error fetching open reservations', error);
+            return [];
+        }
+
+        return resets;
+    }
+
+    async updateReservationsClosed(resetId: string): Promise<void> {
+        const supabase = createServerComponentClient();
+        const { error } = await supabase
+            .from('raid_resets')
+            .update({ reservations_closed: true })
+            .eq('id', resetId);
+
+        if (error) {
+            console.error('Error updating reservations closed', error);
+            throw new Error('Failed to update reservations closed status');
+        }
     }
 }
