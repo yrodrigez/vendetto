@@ -28,6 +28,9 @@ const CATALOG: Record<FeatureName, FeatureConfig> = {
     raidChannelSync: {
         description: "Sync raids to channels"
     },
+    closeReservations: {
+        description: "Automatically close reservations that are past their reservation time and notify users"
+    }
 }
 
 export default CATALOG;
