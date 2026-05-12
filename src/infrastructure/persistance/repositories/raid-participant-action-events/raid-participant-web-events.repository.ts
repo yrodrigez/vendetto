@@ -21,6 +21,10 @@ type RaidParticipantActionEventRow = {
     to_reset_id: string | null;
     to_raid_name: string | null;
     to_raid_date: string | null;
+    previous_role: string | null;
+    new_role: string | null;
+    previous_status: string | null;
+    new_status: string | null;
 };
 
 function mapRaidParticipantActionEvent(row: RaidParticipantActionEventRow): RaidParticipantActionEvent {
@@ -39,6 +43,10 @@ function mapRaidParticipantActionEvent(row: RaidParticipantActionEventRow): Raid
         toResetId: row.to_reset_id,
         toRaidName: row.to_raid_name,
         toRaidDate: row.to_raid_date,
+        previousRole: row.previous_role,
+        newRole: row.new_role,
+        previousStatus: row.previous_status,
+        newStatus: row.new_status,
     };
 }
 

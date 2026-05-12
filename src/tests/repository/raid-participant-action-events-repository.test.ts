@@ -133,4 +133,53 @@ describe('RaidParticipantWebEventsRepository', () => {
             toRaidDate: null,
         });
     });
+
+    test('maps role and status change events with nullable fields', async () => {
+        const client = createMockClient([
+            {
+                discord_user_id: '555555555',
+                member_id: 99,
+                member_name: 'Sylvanas',
+                event_name: 'raid_change_player_role',
+                created_at: new Date('2026-04-21T10:00:00.000Z'),
+                reset_id: 'role-change-reset',
+                raid_name: 'Magtheridon',
+                raid_date: '2026-04-25 21:00:00',
+                from_reset_id: null,
+                from_raid_name: null,
+                from_raid_date: null,
+                to_reset_id: null,
+                to_raid_name: null,
+                to_raid_date: null,
+                previous_role: 'DPS',
+                new_role: 'Tank',
+                previous_status: 'Confirmed',
+                new_status: 'Confirmed',
+            },
+        ]);
+        const repo = new RaidParticipantWebEventsRepository(client);
+
+        const results = await repo.findRecentEvents(3600);
+
+        expect(results[0]).toEqual({
+            discordUserId: '555555555',
+            memberId: 99,
+            memberName: 'Sylvanas',
+            eventName: 'raid_change_player_role',
+            createdAt: new Date('2026-04-21T10:00:00.000Z'),
+            resetId: 'role-change-reset',
+            raidName: 'Magtheridon',
+            raidDate: '2026-04-25 21:00:00',
+            fromResetId: null,
+            fromRaidName: null,
+            fromRaidDate: null,
+            toResetId: null,
+            toRaidName: null,
+            toRaidDate: null,
+            previousRole: 'DPS',
+            newRole: 'Tank',
+            previousStatus: 'Confirmed',
+            newStatus: 'Confirmed',
+        });
+    });
 });

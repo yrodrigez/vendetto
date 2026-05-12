@@ -13,6 +13,10 @@ export type RaidParticipantActionNotifierInput = {
     seedList: string[] | { discordId: string }[];
 }
 
+function capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 @WorkflowName('Campaign: Raid Participant Action Notifier')
 @Schedule('0 * * * *', { isRunningOnStartup: true }) // Every hour
 export class RaidParticipantActionNotifierWorkflow extends WorkflowWithSchedule<RaidParticipantActionNotifierInput> {
@@ -94,6 +98,22 @@ export class RaidParticipantActionNotifierWorkflow extends WorkflowWithSchedule<
         }
     }
 
+    private formatRoleReference(role: string | null): string {
+        if (!role) {
+            return 'no role';
+        }
+
+        return `**${capitalize(role)}**`;
+    }
+
+    private formatStatusReference(status: string | null): string {
+        if (!status) {
+            return 'no status';
+        }
+
+        return `**${capitalize(status)}**`;
+    }
+
     private buildActionDescription(candidate: RaidParticipantActionEvent): string {
         switch (candidate.eventName) {
             case 'raid_bench_player':
@@ -104,6 +124,10 @@ export class RaidParticipantActionNotifierWorkflow extends WorkflowWithSchedule<
                 return `you have been removed from ${this.formatRaidReference(candidate.raidName, candidate.raidDate)}.`;
             case 'move_participant':
                 return `you have been moved from ${this.formatRaidReference(candidate.fromRaidName, candidate.fromRaidDate)} to ${this.formatRaidReference(candidate.toRaidName, candidate.toRaidDate)}.`;
+            case 'raid_change_player_role':
+                return `your role has been changed from ${this.formatRoleReference(candidate.previousRole)} to ${this.formatRoleReference(candidate.newRole)} for ${this.formatRaidReference(candidate.raidName, candidate.raidDate)}.`;
+            case 'raid_change_player_status':
+                return `your status has been changed from ${this.formatStatusReference(candidate.previousStatus)} to ${this.formatStatusReference(candidate.newStatus)} for ${this.formatRaidReference(candidate.raidName, candidate.raidDate)}.`;
             default:
                 return 'there has been an update to your raid signup.';
         }

@@ -2,7 +2,9 @@ export type RaidParticipantActionEventName =
     | 'raid_bench_player'
     | 'raid_unbench_player'
     | 'raid_remove_player'
-    | 'move_participant';
+    | 'move_participant'
+    | 'raid_change_player_role'
+    | 'raid_change_player_status';
 
 export type RaidParticipantActionEvent = {
     discordUserId: string;
@@ -10,6 +12,10 @@ export type RaidParticipantActionEvent = {
     memberName: string;
     eventName: RaidParticipantActionEventName;
     createdAt: Date;
+    previousRole: string | null;
+    newRole: string | null;
+    previousStatus: string | null;
+    newStatus: string | null;
     resetId: string | null;
     raidName: string | null;
     raidDate: string | null;

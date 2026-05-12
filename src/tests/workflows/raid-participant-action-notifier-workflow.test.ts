@@ -66,7 +66,29 @@ function candidate(overrides: Partial<RaidParticipantActionEvent> = {}): RaidPar
         toResetId: null,
         toRaidName: null,
         toRaidDate: null,
+        newRole: null,
+        previousRole: null,
+        newStatus: null,
+        previousStatus: null,
         ...overrides,
+    };
+}
+
+function candidateRaidChangeRole(overrides: Partial<RaidParticipantActionEvent> = {}): RaidParticipantActionEvent {
+    return {
+        ...candidate(overrides),
+        eventName: 'raid_change_player_role',
+        previousRole: 'DPS',
+        newRole: 'Healer',
+    };
+}
+
+function candidateRaidChangeStatus(overrides: Partial<RaidParticipantActionEvent> = {}): RaidParticipantActionEvent {
+    return {
+        ...candidate(overrides),
+        eventName: 'raid_change_player_status',
+        previousStatus: 'Confirmed',
+        newStatus: 'Tentative',
     };
 }
 
@@ -165,5 +187,31 @@ describe('RaidParticipantActionNotifierWorkflow', () => {
         const payload = mocks.processDeliveryUseCase.execute.mock.calls[0][0];
         expect(payload.targetData[0].actionDescription).toContain('removed from');
         expect(payload.targetData[1].actionDescription).toContain('taken off the bench');
+    });
+
+    test('processDelivery formats role change actions distinctly', async () => {
+        const mocks = createMocks();
+        const workflow = createWorkflow(mocks);
+        (workflow as any).candidatesData = [candidateRaidChangeRole()];
+
+        await (workflow as any).processDelivery();
+
+        const payload = mocks.processDeliveryUseCase.execute.mock.calls[0][0];
+        expect(payload.targetData[0].actionDescription).toContain('role has been changed from');
+        expect(payload.targetData[0].actionDescription).toContain('to **Healer**');
+        expect(payload.targetData[0].actionDescription).toContain('from **DPS**');
+    });
+
+    test('processDelivery formats status change actions distinctly', async () => {
+        const mocks = createMocks();
+        const workflow = createWorkflow(mocks);
+        (workflow as any).candidatesData = [candidateRaidChangeStatus()];
+
+        await (workflow as any).processDelivery();
+
+        const payload = mocks.processDeliveryUseCase.execute.mock.calls[0][0];
+        expect(payload.targetData[0].actionDescription).toContain('status has been changed from');
+        expect(payload.targetData[0].actionDescription).toContain('from **Confirmed**');
+        expect(payload.targetData[0].actionDescription).toContain('to **Tentative**');
     });
 });

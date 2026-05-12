@@ -6,16 +6,20 @@ WITH relevant_events AS (
         (e.metadata->>'memberId')::bigint AS member_id,
         e.metadata->>'playerName' AS player_name,
         CASE
-            WHEN e.event_name IN ('raid_bench_player', 'raid_unbench_player') THEN e.metadata->>'resetId'
+            WHEN e.event_name IN ('raid_bench_player', 'raid_unbench_player', 'raid_change_player_role', 'raid_change_player_status') THEN e.metadata->>'resetId'
             WHEN e.event_name = 'raid_remove_player' THEN e.metadata->>'raidId'
             WHEN e.event_name = 'move_participant' THEN e.metadata->>'toResetId'
             ELSE NULL
         END AS reset_id,
         CASE WHEN e.event_name = 'move_participant' THEN e.metadata->>'fromResetId' ELSE NULL END AS from_reset_id,
-        CASE WHEN e.event_name = 'move_participant' THEN e.metadata->>'toResetId' ELSE NULL END AS to_reset_id
+        CASE WHEN e.event_name = 'move_participant' THEN e.metadata->>'toResetId' ELSE NULL END AS to_reset_id,
+        CASE WHEN e.event_name = 'raid_change_player_role' THEN e.metadata->>'previousRole' ELSE NULL END AS previous_role,
+        CASE WHEN e.event_name = 'raid_change_player_role' THEN e.metadata->>'newRole' ELSE NULL END AS new_role,
+        CASE WHEN e.event_name = 'raid_change_player_status' THEN e.metadata->>'previousStatus' ELSE NULL END AS previous_status,
+        CASE WHEN e.event_name = 'raid_change_player_status' THEN e.metadata->>'newStatus' ELSE NULL END AS new_status
     FROM public.web_events e
     WHERE e.created_at >= NOW() - ($1 || ' seconds')::interval
-      AND e.event_name IN ('raid_remove_player', 'raid_bench_player', 'raid_unbench_player', 'move_participant')
+      AND e.event_name IN ('raid_remove_player', 'raid_bench_player', 'raid_unbench_player', 'move_participant','raid_change_player_role', 'raid_change_player_status')
       AND e.metadata ? 'memberId'
 ), resolved_members AS (
     SELECT
@@ -27,7 +31,11 @@ WITH relevant_events AS (
         re.from_reset_id,
         re.to_reset_id,
         COALESCE(op.provider_user_id, dm.discord_user_id) AS discord_user_id,
-        COALESCE(m.character->>'name', dm.name, re.player_name, 'raider') AS member_name
+        COALESCE(m.character->>'name', dm.name, re.player_name, 'raider') AS member_name,
+        re.previous_role,
+        re.new_role,
+        re.previous_status,
+        re.new_status
     FROM relevant_events re
     LEFT JOIN public.ev_member m ON m.id = re.member_id
     LEFT JOIN LATERAL (
@@ -53,7 +61,11 @@ WITH relevant_events AS (
         (from_reset.raid_date + from_reset.time)::text AS from_raid_date,
         rm.to_reset_id,
         to_raid.name AS to_raid_name,
-        (to_reset.raid_date + to_reset.time)::text AS to_raid_date
+        (to_reset.raid_date + to_reset.time)::text AS to_raid_date,
+        rm.previous_role,
+        rm.new_role,
+        rm.previous_status,
+        rm.new_status
     FROM resolved_members rm
     LEFT JOIN public.raid_resets target_reset ON target_reset.id::text = rm.reset_id
     LEFT JOIN public.ev_raid target_raid ON target_raid.id = target_reset.raid_id
@@ -93,7 +105,11 @@ SELECT
     from_raid_date,
     to_reset_id,
     to_raid_name,
-    to_raid_date
+    to_raid_date,
+    previous_role,
+    new_role,
+    previous_status,
+    new_status
 FROM ranked_events
 WHERE row_num = 1
 ORDER BY created_at ASC;
