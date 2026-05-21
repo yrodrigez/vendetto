@@ -1,8 +1,9 @@
 import { DiscordChannelPort } from "@/application/ports/outbound/discord-channel.port";
+import { DiscordTextChannelPort, DiscordTextMessage } from "@/application/ports/outbound/discord-text-channel.port";
 import { getDiscordClient } from "./discord-api.adapter";
-import { ChannelType, OverwriteType, PermissionFlagsBits, TextChannel } from "discord.js";
+import { ChannelType, Message, OverwriteType, PermissionFlagsBits, TextChannel } from "discord.js";
 
-export class DiscordChannelAdapter implements DiscordChannelPort {
+export class DiscordChannelAdapter implements DiscordChannelPort, DiscordTextChannelPort {
     async createTextChannel(guildId: string, options: {
         name: string;
         categoryName: string;
@@ -77,5 +78,69 @@ export class DiscordChannelAdapter implements DiscordChannelPort {
         return textChannel.permissionOverwrites.cache
             .filter(overwrite => overwrite.type === OverwriteType.Member)
             .map(overwrite => overwrite.id);
+    }
+
+    async findTextChannelByName(guildId: string, channelName: string): Promise<string | null> {
+        const client = await getDiscordClient();
+        const guild = await client.guilds.fetch(guildId);
+        const channels = await guild.channels.fetch();
+        const channel = channels.find(ch => ch?.type === ChannelType.GuildText && ch.name === channelName);
+
+        return channel?.id ?? null;
+    }
+
+    async findRecentMessages(channelId: string, since: Date): Promise<DiscordTextMessage[]> {
+        const client = await getDiscordClient();
+        const channel = await client.channels.fetch(channelId);
+        if (!channel || channel.type !== ChannelType.GuildText) return [];
+
+        const textChannel = channel as TextChannel;
+        const messages: DiscordTextMessage[] = [];
+        let before: string | undefined;
+
+        while (true) {
+            const fetched = await textChannel.messages.fetch({ limit: 100, before });
+            if (!fetched.size) break;
+
+            let reachedOldMessages = false;
+            for (const message of fetched.values()) {
+                if (message.createdAt < since) {
+                    reachedOldMessages = true;
+                    continue;
+                }
+
+                const content = this.extractMessageContent(message);
+                if (!content) continue;
+
+                messages.push({
+                    id: message.id,
+                    authorName: message.author.username,
+                    content,
+                    createdAt: message.createdAt,
+                    url: message.url,
+                });
+            }
+
+            if (reachedOldMessages || fetched.size < 100) break;
+
+            const oldestMessage = fetched.reduce((oldest, message) =>
+                message.createdTimestamp < oldest.createdTimestamp ? message : oldest
+            );
+            before = oldestMessage.id;
+        }
+
+        return messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    }
+
+    private extractMessageContent(message: Message): string {
+        const parts = [message.content.trim()];
+
+        for (const embed of message.embeds) {
+            parts.push(embed.title?.trim() ?? '');
+            parts.push(embed.description?.trim() ?? '');
+            parts.push(embed.url?.trim() ?? '');
+        }
+
+        return parts.filter(Boolean).join('\n');
     }
 }

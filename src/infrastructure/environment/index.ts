@@ -18,6 +18,21 @@ const environment = {
     evApi: {
         baseUrl: process.env.EV_API_BASE_URL!,
         token: process.env.EV_API_TOKEN!,
+    },
+    selectedAIProvider: process.env.AI_PROVIDER || 'ollama',
+    aiProviders: {
+        ollama: {
+            baseUrl: process.env.OLLAMA_BASE_URL!,
+            model: process.env.OLLAMA_MODEL || 'gpt-oss:20b',
+        },
+        openai: {
+            model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+            apiKey: process.env.OPENAI_API_KEY || 'not-set',
+        },
+        anthropic: {
+            model: process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest',
+            apiKey: process.env.ANTHROPIC_API_KEY || 'not-set',
+        }
     }
 
 } as const;

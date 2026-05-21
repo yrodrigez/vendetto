@@ -12,6 +12,7 @@ import { createContainer } from "./di-container";
 import { InsertDiscordMembersWorkflow } from "@/application/workflows/discord/insert-discord-members.workflow";
 import { ResetChannelSyncWorkflow } from "@/application/workflows/discord/reset-channel-sync/reset-channel-sync.workflow";
 import { CloseReservationsWorkflow } from "@/application/workflows/discord/close-reservations/close-reservations.workflow";
+import { VendettoNewsWorkflow } from "@/application/workflows/discord/vendetto-news/vendetto-news.workflow";
 
 
 export async function startWorkflows() {
@@ -37,6 +38,8 @@ export async function startWorkflows() {
         resetChannelRepository,
         resetParticipantRepository,
         raidResetRepository,
+        lootHistoryRepository,
+        newsDigestGenerationAdapter,
     } = createContainer()
 
 
@@ -58,6 +61,17 @@ export async function startWorkflows() {
             await scheduler.registerWorkflow(workflow, { guildId: guild.id })
             console.log(`Registered workflow "${workflow.name}" for guild ${guild.id}`)
         }
+
+        const vendettoNewsWorkflow = new VendettoNewsWorkflow(
+            lootHistoryRepository,
+            discordChannelAdapter,
+            newsDigestGenerationAdapter,
+            workflowExecutionRepository,
+            workflowRepository,
+            guild.id,
+        )
+        await scheduler.registerWorkflow(vendettoNewsWorkflow, { guildId: guild.id, guildName: guild.name })
+        console.log(`Registered workflow "${vendettoNewsWorkflow.name}" for guild ${guild.id}`)
 
         if (guildFeaturePolicyService.isFeatureEnabled(guild.id, "raidNotifications")) {
             const raidReminderWorkflow = new RaidReminderWorkflow(

@@ -40,6 +40,8 @@ import { BisSearchService } from "@/infrastructure/bis-search.service";
 import { NsfwSoundDetectClientFactory } from "@/infrastructure/audio/nsfw-sound-detect.client";
 import { VoiceModerationRegistry } from "@/infrastructure/discord/voice-moderation-registry";
 import { RaidParticipantWebEventsRepository } from "@/infrastructure/persistance/repositories/raid-participant-action-events/raid-participant-web-events.repository";
+import { LootHistoryRepository } from "@/infrastructure/persistance/repositories/loot-history-news/loot-history-news.repository";
+import { VercelAiNewsDigestGenerationAdapter } from "@/infrastructure/ai/vercel-ai-news-digest-generation.adapter";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -108,6 +110,8 @@ export function createContainer() {
     const nsfwScoreThreshold = Number(process.env.NSFW_SCORE_THRESHOLD ?? '0.65');
     const nsfwDetectorFactory = new NsfwSoundDetectClientFactory(nsfwDetectWsUrl);
     const voiceModerationRegistry = new VoiceModerationRegistry();
+    const lootHistoryRepository = new LootHistoryRepository(databaseClient);
+    const newsDigestGenerationAdapter = new VercelAiNewsDigestGenerationAdapter();
 
     return {
         guildSubscriptionService,
@@ -152,5 +156,7 @@ export function createContainer() {
         nsfwTargetLabels,
         nsfwScoreThreshold,
         voiceModerationRegistry,
+        lootHistoryRepository,
+        newsDigestGenerationAdapter,
     }
 }
