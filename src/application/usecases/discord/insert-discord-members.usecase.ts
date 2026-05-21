@@ -1,7 +1,7 @@
 import { DiscordMembersRepositoryPort } from "@/application/ports/outbound/database/discord-members-repository.port";
+import { MemberRepositoryPort } from "@/application/ports/outbound/database/member-repository.port";
 import { UsersRepositoryPort } from "@/application/ports/outbound/database/users-repository.port";
 import { DiscordApiPort } from "@/application/ports/outbound/discord-api.port";
-import { MemberRepositoryPort } from "@/application/ports/outbound/database/member-repository.port";
 
 export class InsertDiscordMembersUseCase {
     constructor(
@@ -30,16 +30,29 @@ export class InsertDiscordMembersUseCase {
         const allDiscordUsers = await this.discordAPI.findAllMembers(guildId);
         const selectedCharacters = await this.charactersRepository.findAllSelectedCharacters();
 
-        await Promise.all(allDiscordUsers.map(async discordUser => {
+        const realUsers = allDiscordUsers.filter(user => !user.user.bot);
+        console.log(`Found ${allDiscordUsers.length} total members in Discord guild, ${realUsers.length} of them are real users (non-bots).`);
+        console.log(`Found ${selectedCharacters.length} selected characters in the database.`);
+
+        const discordUserIds = realUsers.map(user => user.id);
+        const databaseMembers = await this.discordMembersRepository.findAllByUserIds(discordUserIds);
+        const databaseMemberIds = new Set(databaseMembers.map(member => member.discord_user_id));
+        console.log(`Found ${databaseMembers.length} members in the database linked to Discord accounts.`);
+
+        const usersLinkedToDiscordAccounts = await this.usersRepository.findAllByDiscordIds(discordUserIds);
+        const usersLinkedToDiscordAccountIds = new Set(usersLinkedToDiscordAccounts.map(link => link.discordId));
+        console.log(`Found ${usersLinkedToDiscordAccounts.length} users in the database linked to Discord accounts.`);
+
+        const payload = realUsers.map(discordUser => {
             try {
-                const existingMember = await this.discordMembersRepository.findByDiscordUserId(discordUser.id);
-                if (existingMember) {
-                    console.log(`Discord user ${discordUser.id} already exists in database with member ID ${existingMember.member_id}. Skipping.`)
+                if (databaseMemberIds.has(discordUser.id)) {
+                    const existingMember = databaseMembers.find(member => member.discord_user_id === discordUser.id);
+                    console.log(`Discord user ${discordUser.id} already exists in database with member ID ${existingMember?.member_id}. Skipping.`);
                     return; // Skip to next user
                 }
-                const existsByDiscordId = await this.usersRepository.existsByDiscordId(discordUser.id);
+
+                const existsByDiscordId = usersLinkedToDiscordAccountIds.has(discordUser.id);
                 if (existsByDiscordId) {
-                    //console.log(`Discord user ${discordUser.id} is already linked to a user account in the database. Skipping.`)
                     return; // Skip to next user
                 }
 
@@ -56,7 +69,7 @@ export class InsertDiscordMembersUseCase {
                 const memberId = matchingCharacter.id;
                 const memberName = matchingCharacter.name;
                 console.log('\x1b[34m%s\x1b[0m', `Linking Discord user ${discordUser.id} (${discordUser.user.username}) to character ${memberName} (ID: ${memberId}).`);
-                await this.discordMembersRepository.insert({
+                return ({
                     discordUserId: discordUser.id,
                     memberId,
                     discordUser: { id: discordUser.id, username: discordUser.user.username },
@@ -66,7 +79,19 @@ export class InsertDiscordMembersUseCase {
             } catch (error: any) {
                 console.error(`Error processing Discord user ${discordUser.id} (${discordUser.user.username}):`, error.message || error);
             }
-        }));
+        }).filter(x => !!x);
 
+        if (payload.length === 0) {
+            console.log('No new Discord members to insert into the database. Exiting.');
+            return;
+        }
+        
+        console.log(`Inserting ${payload.length} new Discord members into the database...`);
+        const insertedMembers = await this.discordMembersRepository.insertMany(payload);
+        if (insertedMembers.length > 0) {
+            console.log(`Successfully upserted ${insertedMembers.length} new Discord members into the database.`);
+        } else {
+            console.log(`No new Discord members were inserted into the database.`);
+        }
     }
 }

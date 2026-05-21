@@ -3,6 +3,14 @@ import { DatabaseClient } from "@/infrastructure/database/db";
 
 export class UsersRepository implements UsersRepositoryPort {
     constructor(private readonly databaseClient: DatabaseClient) { }
+    async findAllByDiscordIds(discordIds: string[]): Promise<{ userId: string; discordId: string; }[]> {
+        if (discordIds.length === 0) {
+            return [];
+        }
+        const query = `select user_id, provider_user_id as discord_id from ev_auth.oauth_providers where provider_user_id = any($1::text[]) and provider = 'discord_oauth'`;
+        const result = await this.databaseClient.query<{ user_id: string; discord_id: string }>(query, [discordIds]);
+        return result.map(row => ({ userId: row.user_id, discordId: row.discord_id }));
+    }
     async findLinkedCharactersByUserId(userId: string): Promise<{ characterName: string; characterId: number; }[]> {
         const query = `select character->>'name' as character_name, id as character_id from ev_member where user_id = $1`;
         const result = await this.databaseClient.query<{ character_name: string; character_id: number }>(query, [userId]);

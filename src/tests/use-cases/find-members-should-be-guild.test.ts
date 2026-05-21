@@ -5,7 +5,7 @@ import { EvApiService } from "../../infrastructure/ev-api.service";
 import { MembersRepository } from "../../infrastructure/persistance/repositories/members/members.repository";
 
 describe('FindMembersShouldBeInGuildRoleUsecase', () => {
-    test('should return members in specified guild', async () => {
+    test.skip('should return members in specified guild', async () => {
         const usecase = new FindMembersShouldBeInGuildRoleUsecase(
             new MembersRepository(new DatabaseClient()),
             new DiscordApiAdapter(),

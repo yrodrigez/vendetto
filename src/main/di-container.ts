@@ -27,7 +27,7 @@ import { RemoveUsersFromRoleUsecase } from "@/application/usecases/discord/remov
 import { FindCandidatesForClassRoleUseCase } from "@/application/usecases/discord/find-candidates-for-class-role.usecase";
 import { DiscordMembersRepository } from "@/infrastructure/persistance/repositories/discord-members/discord-members.repository";
 import { UsersRepository } from "@/infrastructure/persistance/repositories/users/users.repository";
-import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-membets.usecase";
+import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-members.usecase";
 import { DiscordChannelAdapter } from "@/infrastructure/discord/discord-channel.adapter";
 import { ResetChannelRepository } from "@/infrastructure/persistance/repositories/reset-channel/reset-channel.repository";
 import { ResetMessagesRepository } from "@/infrastructure/persistance/repositories/reset-messages/reset-messages.repository";

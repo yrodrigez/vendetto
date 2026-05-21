@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { getEnvironment } from "../environment";
+import { RateLimitedThreadPool } from '@/util/thread-pool';
 
 const cleanEnvVar = (str?: string) =>
   (str ?? "").replace(/^"+|"+$/g, "").trim();
@@ -52,21 +53,26 @@ export async function safeQuery<T>(fn: () => Promise<T>): Promise<{ data: T, err
 
 export default pool;
 
+const databaseThreadPool = new RateLimitedThreadPool(8, 5000);
 
 export class DatabaseClient {
   private pool: Pool;
+  private readonly threadPool: RateLimitedThreadPool;
 
   constructor() {
     this.pool = pool;
+    this.threadPool = databaseThreadPool;
   }
 
   async query<T>(text: string, params?: any[]): Promise<T[]> {
-    const client = await this.pool.connect();
-    try {
-      const res = await client.query(text, params);
-      return res.rows as T[];
-    } finally {
-      client.release();
-    }
+    return this.threadPool.submit(async () => {
+      const client = await this.pool.connect();
+      try {
+        const res = await client.query(text, params);
+        return res.rows as T[];
+      } finally {
+        client.release();
+      }
+    });
   }
 }

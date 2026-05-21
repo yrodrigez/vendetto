@@ -4,4 +4,5 @@ export interface UsersRepositoryPort {
     existsByDiscordId(discordId: string): Promise<boolean>;
     insertDiscordAccount(userId: string, discordId: string, discordUsername: string): Promise<void>;
     findLinkedCharactersByUserId(userId: string): Promise<{ characterName: string, characterId: number }[]>;
+    findAllByDiscordIds(discordIds: string[]): Promise<{ userId: string, discordId: string }[]>;
 }
