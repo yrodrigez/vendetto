@@ -16,4 +16,5 @@ export interface RaidParticipant {
     id: string;
     name: string;
     raidName: string;
+    role: string;
 }

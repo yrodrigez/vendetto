@@ -18,6 +18,7 @@ export class GuildFeaturePolicyService {
             'sendPrivateMessage',
             'raidChannelSync',
             'closeReservations',
+            'marketCreationAgent',
         ]
     ) { }
     isFeatureEnabled(guildId: string, featureName: FeatureName): boolean {

@@ -1,4 +1,7 @@
 allowBuilds:
-  '@discordjs/opus': true
+  "@discordjs/opus": true
+  cpu-features: false
   esbuild: true
+  protobufjs: false
+  ssh2: false
   youtube-dl-exec: true

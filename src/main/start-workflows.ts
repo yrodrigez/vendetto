@@ -4,15 +4,16 @@ import { getGuilds } from "@/infrastructure/discord/discord-api.adapter";
 
 import { RaidReminderWorkflow } from "@/application/workflows/discord/raid-reminder/raid-reminder.workflow";
 
-import { RaidSignupNotifierWorkflow } from "@/application/workflows/discord/raid-signup-notifier/raid-signup-notifier.workflow";
-import { RaidParticipantActionNotifierWorkflow } from "@/application/workflows/discord/raid-participant-action-notifier/raid-participant-action-notifier.workflow";
-import { SyncDiscordGuildRolesWorkflow } from "@/application/workflows/discord/sync-discord-guild-roles.workflow";
-import { SyncDiscordClassRolesWorkflow } from "@/application/workflows/discord/sync-discord-class-roles.workflow";
-import { createContainer } from "./di-container";
-import { InsertDiscordMembersWorkflow } from "@/application/workflows/discord/insert-discord-members.workflow";
-import { ResetChannelSyncWorkflow } from "@/application/workflows/discord/reset-channel-sync/reset-channel-sync.workflow";
+import { CreatePredictionMarketAgentWorkflow } from "@/application/workflows/agents/prediction-market-builder/create-prediction-market-agent.workflow";
 import { CloseReservationsWorkflow } from "@/application/workflows/discord/close-reservations/close-reservations.workflow";
+import { InsertDiscordMembersWorkflow } from "@/application/workflows/discord/insert-discord-members.workflow";
+import { RaidParticipantActionNotifierWorkflow } from "@/application/workflows/discord/raid-participant-action-notifier/raid-participant-action-notifier.workflow";
+import { RaidSignupNotifierWorkflow } from "@/application/workflows/discord/raid-signup-notifier/raid-signup-notifier.workflow";
+import { ResetChannelSyncWorkflow } from "@/application/workflows/discord/reset-channel-sync/reset-channel-sync.workflow";
+import { SyncDiscordClassRolesWorkflow } from "@/application/workflows/discord/sync-discord-class-roles.workflow";
+import { SyncDiscordGuildRolesWorkflow } from "@/application/workflows/discord/sync-discord-guild-roles.workflow";
 import { VendettoNewsWorkflow } from "@/application/workflows/discord/vendetto-news/vendetto-news.workflow";
+import { createContainer } from "./di-container";
 
 
 export async function startWorkflows() {
@@ -40,6 +41,11 @@ export async function startWorkflows() {
         raidResetRepository,
         lootHistoryRepository,
         newsDigestGenerationAdapter,
+        predictionMarketBuilderAgent,
+        getUpcomingResetsUseCase,
+        findPredictionMarketsByResetIdUseCase,
+        getPopularPredictionMarketsUseCase,
+        predictionMarketUseCase,
     } = createContainer()
 
 
@@ -48,6 +54,21 @@ export async function startWorkflows() {
     const guilds = await getGuilds()
     const seeds = await seedMemberRepository.findAll();
     for (const guild of guilds.values()) {
+
+        if (guildFeaturePolicyService.isFeatureEnabled(guild.id, 'marketCreationAgent')) {
+            const createPredictionMarketAgentWorkflow = new CreatePredictionMarketAgentWorkflow(
+                predictionMarketBuilderAgent,
+                findPredictionMarketsByResetIdUseCase,
+                getUpcomingResetsUseCase,
+                logger,
+                workflowExecutionRepository,
+                workflowRepository,
+                guild.id,
+            )
+            await scheduler.registerWorkflow(createPredictionMarketAgentWorkflow, { guildId: guild.id })
+            console.log(`Registered workflow "${createPredictionMarketAgentWorkflow.name}" for guild ${guild.id}`)
+        }
+
         if (guildFeaturePolicyService.isFeatureEnabled(guild.id, 'updateNicknameToCharacterNickname')) {
             const workflow = new SyncDiscordNicknamesWorkflow(
                 candidateRepository,

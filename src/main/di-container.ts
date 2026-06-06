@@ -8,40 +8,46 @@ import { LogChannelEntry } from "@/infrastructure/discord/log-channel-entry";
 import { SupabaseBroadlogRepository } from "@/infrastructure/persistance/delivery/supabase-broadlog.repository";
 import { SupabaseUrlRepository } from "@/infrastructure/persistance/delivery/supabase-url.repository";
 import { DiscordNicknameCandidateRepository } from "@/infrastructure/persistance/repositories/discord-nickname-candidate/discord-nickname-candidate-repository";
-import { RaidReminderCandidateRepository } from "@/infrastructure/persistance/repositories/raid-reminder-candidate/raid-reminder-candidate.repository";
-import { WorkflowRepository } from "@/infrastructure/persistance/repositories/workflows/workflow.repository";
-import { WorkflowExecutionRepository } from "@/infrastructure/persistance/repositories/workflows/workflow-execution.repository";
-import { RaidSignupNotifierRepository } from "@/infrastructure/persistance/repositories/raid-signup-notifier/raid-signup-notifier.repository";
 import { MemberRolesRepository } from "@/infrastructure/persistance/repositories/member-roles/member-roles.repository";
+import { RaidReminderCandidateRepository } from "@/infrastructure/persistance/repositories/raid-reminder-candidate/raid-reminder-candidate.repository";
 import { SupabaseRaidResetRepository } from "@/infrastructure/persistance/repositories/raid-reset/supabase-raid-reset.repository";
+import { RaidSignupNotifierRepository } from "@/infrastructure/persistance/repositories/raid-signup-notifier/raid-signup-notifier.repository";
+import { WorkflowExecutionRepository } from "@/infrastructure/persistance/repositories/workflows/workflow-execution.repository";
+import { WorkflowRepository } from "@/infrastructure/persistance/repositories/workflows/workflow.repository";
 
-import { UpdateDiscordNicknameToCharacterNameUseCase } from "@/application/usecases/discord/update-discord-nickname.usecase";
+import { PredictionMarketBuilderAgent } from "@/adapters/ai/agents/prediction-market-builder/prediction-market-builder.agent";
+import { FindCandidatesForClassRoleUseCase } from "@/application/usecases/discord/find-candidates-for-class-role.usecase";
 import { FindDiscordNicknameCandidatesUseCase } from "@/application/usecases/discord/find-discord-nickname-candidates.usecase";
-import { DeliveryRepository } from "@/infrastructure/persistance/delivery/supabase-delivery.repository";
-import { SeedMemberRepository } from "@/infrastructure/persistance/delivery/seed-membner.repository";
-import { MembersRepository } from "@/infrastructure/persistance/repositories/members/members.repository";
 import { FindMembersShouldBeInGuildRoleUsecase } from "@/application/usecases/discord/find-members-should-be-in-guild-role.usecase";
-import { EvApiService } from "@/infrastructure/ev-api.service";
+import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-members.usecase";
 import { InsertUsersInRoleUsecase } from "@/application/usecases/discord/insert-users-in-role.usecase";
 import { RemoveUsersFromRoleUsecase } from "@/application/usecases/discord/remove-users-from-role.usecase";
-import { FindCandidatesForClassRoleUseCase } from "@/application/usecases/discord/find-candidates-for-class-role.usecase";
-import { DiscordMembersRepository } from "@/infrastructure/persistance/repositories/discord-members/discord-members.repository";
-import { UsersRepository } from "@/infrastructure/persistance/repositories/users/users.repository";
-import { InsertDiscordMembersUseCase } from "@/application/usecases/discord/insert-discord-members.usecase";
+import { UpdateDiscordNicknameToCharacterNameUseCase } from "@/application/usecases/discord/update-discord-nickname.usecase";
+import { CreatePredictionMarketUseCase } from "@/application/usecases/prediction-markets/create-prediction-market.usecase";
+import { FindPredictionMarketsByResetIdUseCase } from "@/application/usecases/prediction-markets/find-prediction-markets-by-reset-id.usecase";
+import { GetPopularPredictionMarketsUseCase } from "@/application/usecases/prediction-markets/get-popular-prediction-markets.usecase";
+import { GetUpcomingResetsUseCase } from "@/application/usecases/raid-resets/get-upcoming-resets.usecase";
+import { VercelAiNewsDigestGenerationAdapter } from "@/infrastructure/ai/vercel-ai-news-digest-generation.adapter";
+import { NsfwSoundDetectClientFactory } from "@/infrastructure/audio/nsfw-sound-detect.client";
+import { BisSearchService } from "@/infrastructure/bis-search.service";
 import { DiscordChannelAdapter } from "@/infrastructure/discord/discord-channel.adapter";
+import { DiscordPlayerAdapter } from "@/infrastructure/discord/discord-player.adapter";
+import { VoiceModerationRegistry } from "@/infrastructure/discord/voice-moderation-registry";
+import { EvApiService } from "@/infrastructure/ev-api.service";
+import { OllamaService } from "@/infrastructure/ollama.service";
+import { SeedMemberRepository } from "@/infrastructure/persistance/delivery/seed-membner.repository";
+import { DeliveryRepository } from "@/infrastructure/persistance/delivery/supabase-delivery.repository";
+import { DiscordMembersRepository } from "@/infrastructure/persistance/repositories/discord-members/discord-members.repository";
+import { PredictionMarketsRepository } from "@/infrastructure/persistance/repositories/evx/prediction-markets.repository";
+import { LootHistoryRepository } from "@/infrastructure/persistance/repositories/loot-history-news/loot-history-news.repository";
+import { MembersRepository } from "@/infrastructure/persistance/repositories/members/members.repository";
+import { RaidParticipantWebEventsRepository } from "@/infrastructure/persistance/repositories/raid-participant-action-events/raid-participant-web-events.repository";
 import { ResetChannelRepository } from "@/infrastructure/persistance/repositories/reset-channel/reset-channel.repository";
 import { ResetMessagesRepository } from "@/infrastructure/persistance/repositories/reset-messages/reset-messages.repository";
 import { ResetParticipantRepository } from "@/infrastructure/persistance/repositories/reset-participant/reset-participant.repository";
-import { ResetMessagesRealtimeSubscription } from "@/infrastructure/supabase/reset-messages-realtime.subscription";
-import { DiscordPlayerAdapter } from "@/infrastructure/discord/discord-player.adapter";
 import { SuggestSrRepository } from "@/infrastructure/persistance/repositories/suggest-sr/suggest-sr.repository";
-import { OllamaService } from "@/infrastructure/ollama.service";
-import { BisSearchService } from "@/infrastructure/bis-search.service";
-import { NsfwSoundDetectClientFactory } from "@/infrastructure/audio/nsfw-sound-detect.client";
-import { VoiceModerationRegistry } from "@/infrastructure/discord/voice-moderation-registry";
-import { RaidParticipantWebEventsRepository } from "@/infrastructure/persistance/repositories/raid-participant-action-events/raid-participant-web-events.repository";
-import { LootHistoryRepository } from "@/infrastructure/persistance/repositories/loot-history-news/loot-history-news.repository";
-import { VercelAiNewsDigestGenerationAdapter } from "@/infrastructure/ai/vercel-ai-news-digest-generation.adapter";
+import { UsersRepository } from "@/infrastructure/persistance/repositories/users/users.repository";
+import { ResetMessagesRealtimeSubscription } from "@/infrastructure/supabase/reset-messages-realtime.subscription";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -113,7 +119,26 @@ export function createContainer() {
     const lootHistoryRepository = new LootHistoryRepository(databaseClient);
     const newsDigestGenerationAdapter = new VercelAiNewsDigestGenerationAdapter();
 
+    const predictionMarketRepository = new PredictionMarketsRepository(databaseClient);
+    const predictionMarketUseCase = new CreatePredictionMarketUseCase(predictionMarketRepository);
+    const findPredictionMarketsByResetIdUseCase = new FindPredictionMarketsByResetIdUseCase(predictionMarketRepository);
+    const getPopularPredictionMarketsUseCase = new GetPopularPredictionMarketsUseCase(predictionMarketRepository);
+
+    const getUpcomingResetsUseCase = new GetUpcomingResetsUseCase(raidResetRepository);
+
+    const predictionMarketBuilderAgent = new PredictionMarketBuilderAgent({
+        createPredictionMarketUseCase: predictionMarketUseCase,
+        findPredictionMarketsByResetIdUseCase: findPredictionMarketsByResetIdUseCase,
+        getPopularPredictionMarketsUseCase: getPopularPredictionMarketsUseCase,
+        model: 'claude-sonnet-4-6',
+    });
+
     return {
+        predictionMarketBuilderAgent,
+        getUpcomingResetsUseCase,
+        findPredictionMarketsByResetIdUseCase,
+        getPopularPredictionMarketsUseCase,
+        predictionMarketUseCase,
         guildSubscriptionService,
         guildFeaturePolicyService,
         discordApi,
