@@ -30,6 +30,9 @@ const CATALOG: Record<FeatureName, FeatureConfig> = {
     },
     closeReservations: {
         description: "Automatically close reservations that are past their reservation time and notify users"
+    },
+    marketCreationAgent: {
+        description: "AI agent that creates prediction markets for upcoming raids based on the participants and their roles"
     }
 }
 
