@@ -1,3 +1,6 @@
+export type WorkflowStepContextInput = Record<string, any> | void
+export type WorkflowStepContextOutput = Record<string, any> | void
+
 export type ExecutionStatus = 'queued' | 'running' | 'completed' | 'failed' | 'stopped'
 export type ActivityStatus = 'queued' | 'running' | 'completed' | 'failed' | 'skipped'
 
@@ -21,6 +24,8 @@ export type WorkflowActivity = {
     createdAt: Date
     updatedAt: Date
     error?: string
+    output?: WorkflowStepContextOutput
+    input?: WorkflowStepContextInput
 }
 
 export interface WorkflowRunRepositoryPort {
@@ -35,5 +40,9 @@ export interface WorkflowRunRepositoryPort {
     updateActivity(id: string, updates: {
         status?: ActivityStatus
         error?: string
+        output?: WorkflowStepContextOutput
+        input?: WorkflowStepContextInput
     }): Promise<void>
+
+    cleanup(daysAgo: number): Promise<void>
 }

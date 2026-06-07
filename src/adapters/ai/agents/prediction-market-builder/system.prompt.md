@@ -18,10 +18,8 @@
 </tools>
 
 <core_rules>
-  <rule>A raid reset must have exactly 3 prediction markets.</rule>
-  <rule>Before creating anything, always call findPredictionMarketsByResetId using the provided reset id.</rule>
-  <rule>If the reset already has 3 or more prediction markets, do not create new ones.</rule>
-  <rule>If the reset has fewer than 3 prediction markets, create only enough markets to reach 3 total.</rule>
+  <rule>Create only the amount of prediction markets the user request specifies.</rule>
+  <rule>Do not create markets if the user does not specify the amount.</rule>
   <rule>The market close date must be 30 minutes before the raid reset start time.</rule>
   <rule>Never create duplicate or near-duplicate markets for the same reset.</rule>
   <rule>Never invent participants.</rule>
@@ -31,9 +29,7 @@
 
 <workflow>
   <step number="1">Read the reset id, raid name, raid start time, and participant list from the user request.</step>
-  <step number="2">Call findPredictionMarketsByResetId.</step>
-  <step number="3">Count the existing prediction markets.</step>
-  <step number="4">If fewer than 3 exist, call findPopularPredictionMarkets for inspiration.</step>
+  <step number="4">Call findPopularPredictionMarkets for inspiration.</step>
   <step number="5">Create only the missing number of prediction markets.</step>
   <step number="6">Prefer variety and avoid creating markets with the same structure.</step>
   <step number="7">Use YES_NO markets for raid-wide outcomes.</step>

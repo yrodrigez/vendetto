@@ -1,5 +1,5 @@
 import 'reflect-metadata'
-import { WorkflowRunRepositoryPort as WorkflowExecutionRepositoryPort, type WorkflowExecution } from "@/application/ports/outbound/database/workflow-run-repository.port";
+import { WorkflowRunRepositoryPort as WorkflowExecutionRepositoryPort, WorkflowStepContextOutput, type WorkflowExecution } from "@/application/ports/outbound/database/workflow-run-repository.port";
 import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { CronExpressionParser } from 'cron-parser'
 
@@ -62,14 +62,18 @@ export abstract class Workflow<TInput, TOutput = void> {
     protected currentStepId: string | null = null
     protected lastStepId: string | null = null
     protected executionId: number | null = null
-
+    protected readonly workflowRepository: WorkflowRepositoryPort;
+    protected readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort;
 
     constructor(
-        protected readonly workflowRepository: WorkflowRepositoryPort,
-        protected readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort,
+        workflowRepository: WorkflowRepositoryPort,
+        workflowExecutionRepository: WorkflowExecutionRepositoryPort,
         protected input: TInput = {} as TInput,
         protected readonly context: string
-    ) { }
+    ) {
+        this.workflowRepository = workflowRepository
+        this.workflowExecutionRepository = workflowExecutionRepository
+    }
 
     get name(): string {
         const name = Reflect.getOwnMetadata(NAME_METADATA_KEY, this.constructor)
@@ -123,8 +127,10 @@ export abstract class Workflow<TInput, TOutput = void> {
             const steps = this.getSteps()
             await this.workflowExecutionRepository.updateExecution(execution.id, { status: 'running' })
 
+            let stepResult: WorkflowStepContextOutput = void 0
             for (const step of steps) {
-                output = await this.executeStep(execution, step)
+                output = await this.executeStep(execution, step, stepResult)
+                stepResult = output as WorkflowStepContextOutput
             }
 
             await this.workflowExecutionRepository.updateExecution(execution.id, { status: 'completed' })
@@ -138,23 +144,39 @@ export abstract class Workflow<TInput, TOutput = void> {
         }
     }
 
-    protected async executeStep(execution: WorkflowExecution, step: StepMetadata): Promise<TOutput | void> {
+    private async onBeforeStep(execution: WorkflowExecution, step: StepMetadata): Promise<void> {
         const activity = await this.workflowExecutionRepository.createActivity(execution.id, step.name)
-        await this.workflowExecutionRepository.updateExecution(execution.id, { currentStepId: activity.id })
         await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'running' })
+        await this.workflowExecutionRepository.updateExecution(execution.id, { currentStepId: activity.id })
         this.currentStepId = activity.id
+    }
 
+    private async onAfterStep(execution: WorkflowExecution, step: StepMetadata, result: WorkflowStepContextOutput): Promise<void> {
+        const activityId = this.currentStepId
+        if (!activityId) {
+            throw new Error(`No current step found for workflow execution ${execution.id} at step "${step.name}"`)
+        }
+        await this.workflowExecutionRepository.updateActivity(activityId, { status: 'completed', output: result })
+        await this.workflowExecutionRepository.updateExecution(execution.id, { lastStepId: activityId })
+        this.lastStepId = activityId;
+    }
+
+    private async onStepError(execution: WorkflowExecution, step: StepMetadata, error: Error): Promise<void> {
+        const activityId = this.currentStepId
+        if (!activityId) {
+            throw new Error(`No current step found for workflow execution ${execution.id} at step "${step.name}"`)
+        }
+        await this.workflowExecutionRepository.updateActivity(activityId, { status: 'failed', error: error.message ?? String(error) })
+    }
+
+    protected async executeStep(execution: WorkflowExecution, step: StepMetadata, previousStepResult: WorkflowStepContextOutput): Promise<TOutput | void> {
+        await this.onBeforeStep(execution, step)
         try {
-            const result = await (this as any)[step.methodKey]()
-            await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'completed' })
-            await this.workflowExecutionRepository.updateExecution(execution.id, { lastStepId: activity.id })
-            this.lastStepId = activity.id;
+            const result = await (this as any)[step.methodKey](previousStepResult)
+            await this.onAfterStep(execution, step, result)
             return result
         } catch (error: any) {
-            await this.workflowExecutionRepository.updateActivity(activity.id, {
-                status: 'failed',
-                error: error.message ?? String(error)
-            })
+            await this.onStepError(execution, step, error)
             throw error
         }
     }
@@ -162,8 +184,8 @@ export abstract class Workflow<TInput, TOutput = void> {
 
 export abstract class WorkflowWithRetries<T, TOutput = void> extends Workflow<T, TOutput> {
     constructor(
-        protected readonly workflowRepository: WorkflowRepositoryPort,
-        protected readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort,
+        workflowRepository: WorkflowRepositoryPort,
+        workflowExecutionRepository: WorkflowExecutionRepositoryPort,
         protected readonly context: string
     ) {
         super(workflowRepository, workflowExecutionRepository, {} as T, context)
@@ -173,36 +195,24 @@ export abstract class WorkflowWithRetries<T, TOutput = void> extends Workflow<T,
         return Reflect.getOwnMetadata(RETRY_METADATA_KEY, this.constructor, methodKey)
     }
 
-    protected async executeStep(execution: WorkflowExecution, step: StepMetadata): Promise<TOutput | void> {
+    protected async executeStep(execution: WorkflowExecution, step: StepMetadata, previousStepResult: WorkflowStepContextOutput): Promise<TOutput | void> {
         const retryOptions = this.getRetryOptions(step.methodKey)
 
         if (!retryOptions) {
-            return super.executeStep(execution, step)
+            return super.executeStep(execution, step, previousStepResult)
         }
 
         const { maxRetries, delayMs = 1000, backoff = 'fixed' } = retryOptions
         let lastError: any
 
+        const originalStepName = step.name
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            const activity = await this.workflowExecutionRepository.createActivity(
-                execution.id,
-                attempt === 0 ? step.name : `${step.name} (retry ${attempt}/${maxRetries})`
-            )
-            await this.workflowExecutionRepository.updateExecution(execution.id, { currentStepId: activity.id })
-            await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'running' })
-
             try {
-                const result = await (this as any)[step.methodKey]()
-                await this.workflowExecutionRepository.updateActivity(activity.id, { status: 'completed' })
-                await this.workflowExecutionRepository.updateExecution(execution.id, { lastStepId: activity.id })
-                return result
+                const newName = attempt === 0 ? originalStepName : `${originalStepName} (retry ${attempt}/${maxRetries})`
+                const retryStep = { ...step, name: newName }
+                return await super.executeStep(execution, retryStep, previousStepResult)
             } catch (error: any) {
                 lastError = error
-                await this.workflowExecutionRepository.updateActivity(activity.id, {
-                    status: 'failed',
-                    error: error.message ?? String(error)
-                })
-
                 if (attempt < maxRetries) {
                     const wait = backoff === 'exponential' ? delayMs * Math.pow(2, attempt) : delayMs
                     console.warn(`Step "${step.name}" failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${wait}ms...`)
@@ -211,20 +221,20 @@ export abstract class WorkflowWithRetries<T, TOutput = void> extends Workflow<T,
             }
         }
 
-        throw lastError
+        throw lastError ?? new Error(`Step "${step.name}" failed after ${maxRetries + 1} attempts.`)
     }
 }
 
 export abstract class WorkflowWithSchedule<T, TOutput = void> extends WorkflowWithRetries<T, TOutput> {
     options: ScheduledWorkflowOptions = { isRunningOnStartup: false, isRecurring: true, endDate: undefined }
     constructor(
-        readonly workflowRepository: WorkflowRepositoryPort,
-        readonly workflowExecutionRepository: WorkflowExecutionRepositoryPort,
+        workflowRepository: WorkflowRepositoryPort,
+        workflowExecutionRepository: WorkflowExecutionRepositoryPort,
         readonly context: string,
-
     ) {
         super(workflowRepository, workflowExecutionRepository, context)
     }
+
 
     get schedule(): string {
         const { cron, ...options } = Reflect.getOwnMetadata(SCHEDULE_METADATA_KEY, this.constructor) || {}

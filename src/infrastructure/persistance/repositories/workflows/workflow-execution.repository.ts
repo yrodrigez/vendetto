@@ -1,12 +1,13 @@
+import {
+    type ActivityStatus,
+    type ExecutionStatus,
+    type WorkflowActivity,
+    type WorkflowExecution,
+    type WorkflowRunRepositoryPort,
+    WorkflowStepContextOutput
+} from "@/application/ports/outbound/database/workflow-run-repository.port";
 import { DatabaseClient } from "@/infrastructure/database/db";
 import { readResourceFile } from "@/util/file-resource-helper";
-import {
-    type WorkflowRunRepositoryPort,
-    type WorkflowExecution,
-    type WorkflowActivity,
-    type ExecutionStatus,
-    type ActivityStatus
-} from "@/application/ports/outbound/database/workflow-run-repository.port";
 
 type ExecutionRow = {
     id: number
@@ -58,6 +59,26 @@ function mapActivity(row: ActivityRow): WorkflowActivity {
 
 export class WorkflowExecutionRepository implements WorkflowRunRepositoryPort {
     constructor(private readonly db: DatabaseClient) { }
+    async cleanup(daysAgo: number): Promise<void> {
+        const query = `
+        WITH old_executions AS (
+            SELECT id
+            FROM workflow.workflow_executions
+            WHERE created_at < now() - ($1::int * interval '1 day')
+                AND status = 'completed'
+        ),
+        deleted_activities AS (
+            DELETE FROM workflow.workflow_activities
+            WHERE execution_id IN (SELECT id FROM old_executions)
+            RETURNING id
+        )
+        DELETE FROM workflow.workflow_executions
+        WHERE id IN (SELECT id FROM old_executions);
+        `
+        await this.db.query(query, [daysAgo])
+    }
+
+
 
     async createExecution(workflowId: string, name: string): Promise<WorkflowExecution> {
         const sql = readResourceFile(__dirname, 'sql/create-workflow-run.sql')
@@ -90,12 +111,19 @@ export class WorkflowExecutionRepository implements WorkflowRunRepositoryPort {
     async updateActivity(id: string, updates: {
         status?: ActivityStatus
         error?: string
+        output?: WorkflowStepContextOutput
     }): Promise<void> {
         const sql = readResourceFile(__dirname, 'sql/update-step.sql')
+        const output =
+            updates.output === undefined
+                ? null
+                : JSON.stringify(updates.output)
+
         await this.db.query(sql, [
             id,
             updates.status ?? null,
-            updates.error ?? null
+            updates.error ?? null,
+            output,
         ])
     }
 }

@@ -14,6 +14,7 @@ import { SyncDiscordClassRolesWorkflow } from "@/application/workflows/discord/s
 import { SyncDiscordGuildRolesWorkflow } from "@/application/workflows/discord/sync-discord-guild-roles.workflow";
 import { VendettoNewsWorkflow } from "@/application/workflows/discord/vendetto-news/vendetto-news.workflow";
 import { createContainer } from "./di-container";
+import { CleanupWorkflowsExecutionActivitiesWorkflow } from "@/application/workflows/internal/excution-activities-cleanup.workflow";
 
 
 export async function startWorkflows() {
@@ -41,15 +42,21 @@ export async function startWorkflows() {
         raidResetRepository,
         lootHistoryRepository,
         newsDigestGenerationAdapter,
-        predictionMarketBuilderAgent,
         getUpcomingResetsUseCase,
-        findPredictionMarketsByResetIdUseCase,
-        getPopularPredictionMarketsUseCase,
-        predictionMarketUseCase,
+        executePredictionMarketAgentUseCase,
+        workflowCleanupUseCase,
     } = createContainer()
 
 
     const scheduler = new WorkflowSchedulerService(workflowRepository, logger)
+
+    const workflowCleanupWorkflow = new CleanupWorkflowsExecutionActivitiesWorkflow(
+        workflowCleanupUseCase,
+        workflowExecutionRepository,
+        workflowRepository,
+        'global'
+    );
+    await scheduler.registerWorkflow(workflowCleanupWorkflow, void 0)
 
     const guilds = await getGuilds()
     const seeds = await seedMemberRepository.findAll();
@@ -57,8 +64,7 @@ export async function startWorkflows() {
 
         if (guildFeaturePolicyService.isFeatureEnabled(guild.id, 'marketCreationAgent')) {
             const createPredictionMarketAgentWorkflow = new CreatePredictionMarketAgentWorkflow(
-                predictionMarketBuilderAgent,
-                findPredictionMarketsByResetIdUseCase,
+                executePredictionMarketAgentUseCase,
                 getUpcomingResetsUseCase,
                 logger,
                 workflowExecutionRepository,

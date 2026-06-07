@@ -419,6 +419,7 @@ describe('PredictionMarketsRepository', () => {
         `)
 
         await createTables(dbClient);
+        await seedPredictionMarkets(dbClient);
     })
 
     afterAll(async () => {
@@ -428,7 +429,6 @@ describe('PredictionMarketsRepository', () => {
 
 
     test('getPopuplarPredictionMarkets returns markets ordered by total participants', async () => {
-        await seedPredictionMarkets(dbClient);
         const repository = new PredictionMarketsRepository(dbClient);
         const popularMarkets = await repository.getPopularPredictionMarkets();
 
@@ -467,7 +467,6 @@ describe('PredictionMarketsRepository', () => {
     });
 
     test('Find markets associated with a specific reset ID', async () => {
-        await seedPredictionMarkets(dbClient);
         const repository = new PredictionMarketsRepository(dbClient);
         const resetId = 'reset-4';
         const markets = await repository.findMarketsByResetId(resetId);

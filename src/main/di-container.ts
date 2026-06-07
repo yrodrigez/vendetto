@@ -48,6 +48,8 @@ import { ResetParticipantRepository } from "@/infrastructure/persistance/reposit
 import { SuggestSrRepository } from "@/infrastructure/persistance/repositories/suggest-sr/suggest-sr.repository";
 import { UsersRepository } from "@/infrastructure/persistance/repositories/users/users.repository";
 import { ResetMessagesRealtimeSubscription } from "@/infrastructure/supabase/reset-messages-realtime.subscription";
+import { ExecutePredictionMarketAgentUseCase } from "@/application/usecases/agents/execute-prediction-market-agent.usecase";
+import { WorkflowsCleanupUseCase } from "@/application/usecases/cleanup/workflows-cleanup.usecase";
 
 export function createContainer() {
     const guildSubscriptionService = new GuildSubscriptionService();
@@ -133,7 +135,13 @@ export function createContainer() {
         model: 'claude-sonnet-4-6',
     });
 
+    const executePredictionMarketAgentUseCase = new ExecutePredictionMarketAgentUseCase(predictionMarketBuilderAgent, findPredictionMarketsByResetIdUseCase);
+
+    const workflowCleanupUseCase = new WorkflowsCleanupUseCase(workflowExecutionRepository);
+
     return {
+        workflowCleanupUseCase,
+        executePredictionMarketAgentUseCase,
         predictionMarketBuilderAgent,
         getUpcomingResetsUseCase,
         findPredictionMarketsByResetIdUseCase,

@@ -25,9 +25,9 @@ export class PredictionMarketBuilderAgent {
     };
   }
 
-  private createMessagePrompt(raidResetId: string, resetName: string, resetStartTime: string, participants: { name: string; role: string }[]) {
+  private createMessagePrompt(raidResetId: string, resetName: string, resetStartTime: string, participants: { name: string; role: string }[], remainingSlots: number) {
     const participantList = participants.map(p => `- ${p.name} (${p.role})`).join('\n');
-    return `Create prediction markets for the upcoming raid reset <resetName>${resetName}</resetName> <resetId>${raidResetId}</resetId> starting at <time>${resetStartTime}</time> with the following participants:\n<participants>${participantList}</participants>\n\n`;
+    return `Create prediction ${remainingSlots > 1 ? `${remainingSlots} markets` : '1 market'} for the upcoming raid reset <resetName>${resetName}</resetName> <resetId>${raidResetId}</resetId> starting at <time>${resetStartTime}</time> with the following participants:\n<participants>${participantList}</participants>\n\n`;
   }
 
   private createAnthropicModel(model: string) {
@@ -37,7 +37,7 @@ export class PredictionMarketBuilderAgent {
     return anthropic(anthropicModel);
   }
 
-  async run(raidResetId: string, resetName: string, resetStartDate: string, resetStartTime: string, participants: { name: string; role: string }[]) {
+  async run(raidResetId: string, resetName: string, resetStartDate: string, resetStartTime: string, participants: { name: string; role: string }[], remainingSlots: number) {
     const { model } = this.dependencies;
     const systemPrompt = readResourceFile(__dirname, './system.prompt.md');
     try {
@@ -45,7 +45,7 @@ export class PredictionMarketBuilderAgent {
         model: this.createAnthropicModel(model),
         tools: this.tools,
         system: systemPrompt,
-        prompt: this.createMessagePrompt(raidResetId, resetName, `${resetStartDate} ${resetStartTime}`, participants),
+        prompt: this.createMessagePrompt(raidResetId, resetName, `${resetStartDate} ${resetStartTime}`, participants, remainingSlots),
         stopWhen: stepCountIs(6), // Stop after the agent has executed the createPredictionMarket tool
       });
     } catch (error) {
