@@ -3,6 +3,55 @@ import { DatabaseClient } from "@/infrastructure/database/db";
 
 export class MembersRepository implements MemberRepositoryPort {
   constructor(private databaseClient: DatabaseClient) { }
+  async findDiscordIdsByCharacterNames(characterNames: string[], realmSlug: string): Promise<{ discordId: string; character: { name: string; class: string; guild: string; realmSlug: string; id: number; }; }[]> {
+    if (characterNames.length === 0) {
+      return [];
+    }
+
+    const query = `
+with from_oauth as (
+  select
+    distinct p.provider_user_id as discord_id,
+    m.character->>'name' as name,
+    lower(m.character->'character_class'->>'name') as class,
+    lower(m.character->'guild'->>'name') as guild,
+    lower(m.character->'realm'->>'slug') as "realm_slug",
+    m.id as id
+    from ev_member m
+      inner join ev_auth.oauth_providers p on p.user_id = m.user_id and p.provider = 'discord_oauth'
+    where lower(m.character->>'name') = any($1::text[])
+      and m.character->'realm'->>'slug' = $2
+), from_discord_members as (
+    select
+      distinct p.discord_user_id as discord_id,
+      m.character->>'name' as name,
+      lower(m.character->'character_class'->>'name') as class,
+      lower(m.character->'guild'->>'name') as guild,
+      lower(m.character->'realm'->>'slug') as "realm_slug",
+      m.id as id
+    from ev_member m
+      inner join discord_members p on p.member_id = m.id and m.character->'realm'->>'slug' = $2
+    where lower(m.character->>'name') = any($1::text[])
+)
+select * from from_oauth
+union
+select * from from_discord_members;`;
+
+    const result = await this.databaseClient.query<{ discord_id: string; name: string; class: string; guild: string; realm_slug: string; id: number; }>(query, [characterNames.map(name => name.toLowerCase()), realmSlug.toLowerCase()]);
+    return result
+      .map(r => ({
+        discordId: r.discord_id,
+        character: {
+          id: r.id,
+          name: r.name,
+          class: r.class,
+          guild: r.guild,
+          realmSlug: r.realm_slug,
+        }
+      }))
+      .filter(r => r.character.name && r.discordId && r.character.realmSlug);
+  }
+
   async findAllInGuild(guildName: string): Promise<{ discordId: string; character: { name: string; class: string; guild: string; realmSlug: string; id: string; }; }[]> {
     const query = `
   select

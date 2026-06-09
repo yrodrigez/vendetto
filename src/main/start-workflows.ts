@@ -45,6 +45,7 @@ export async function startWorkflows() {
         getUpcomingResetsUseCase,
         executePredictionMarketAgentUseCase,
         workflowCleanupUseCase,
+        membersRepository,
     } = createContainer()
 
 
@@ -93,6 +94,7 @@ export async function startWorkflows() {
             lootHistoryRepository,
             discordChannelAdapter,
             newsDigestGenerationAdapter,
+            membersRepository,
             workflowExecutionRepository,
             workflowRepository,
             guild.id,

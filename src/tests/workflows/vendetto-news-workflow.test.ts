@@ -22,12 +22,21 @@ function createMocks() {
         return Promise.resolve(null);
     });
 
+    const membersRepository = {
+        findDiscordIdsByCharacterNames: jest.fn().mockResolvedValue([]),
+        findAllSelectedCharactersDiscord: jest.fn().mockResolvedValue([]),
+        findAllInRealm: jest.fn().mockResolvedValue([]),
+        findAllInGuild: jest.fn().mockResolvedValue([]),
+        findAllSelectedCharacters: jest.fn().mockResolvedValue([]),
+    };
+
     return {
         lootHistoryRepository,
         discordChannel,
         newsDigestGeneration,
         workflowExecutionRepository,
         workflowRepository,
+        membersRepository,
     };
 }
 
@@ -36,6 +45,7 @@ function createWorkflow(mocks: ReturnType<typeof createMocks>) {
         mocks.lootHistoryRepository,
         mocks.discordChannel,
         mocks.newsDigestGeneration,
+        mocks.membersRepository,
         mocks.workflowExecutionRepository as any,
         mocks.workflowRepository as any,
         'guild-1',
@@ -91,9 +101,10 @@ describe('VendettoNewsWorkflow', () => {
 
         await (workflow as any).fetchWeeklyRaidAndLootData();
         await (workflow as any).fetchWeeklyNewsMessages();
-        await (workflow as any).generateNewsDigest();
-        await (workflow as any).publishNewsDigest();
-
+        const digest = await (workflow as any).generateNewsDigest();
+        const message = await (workflow as any).replaceNamesWithIds(digest);
+        await (workflow as any).publishNewsDigest(message);
+        
         expect(mocks.discordChannel.findTextChannelByName).toHaveBeenCalledWith('guild-1', 'news');
         expect(mocks.discordChannel.findTextChannelByName).toHaveBeenCalledWith('guild-1', 'vendetto-news');
         expect(mocks.discordChannel.findRecentMessages).toHaveBeenCalledWith('news-channel', expect.any(Date));
@@ -107,6 +118,44 @@ describe('VendettoNewsWorkflow', () => {
             'vendetto-news-channel',
             '**Vendetto News**\nLoot happened. Somehow.',
         );
+    });
+
+    test('replaces character mentions with discord ids', async () => {
+        const mocks = createMocks();
+        const workflow = createWorkflow(mocks);
+
+        mocks.membersRepository.findDiscordIdsByCharacterNames.mockResolvedValue([
+            {
+                discordId: '123456789',
+                character: {
+                    id: 1,
+                    name: 'Guldanish',
+                    class: 'Warlock',
+                    guild: 'Everlasting Vendetta',
+                    realmSlug: 'spineshatter',
+                },
+            },
+            {
+                discordId: '987654321',
+                character: {
+                    id: 2,
+                    name: 'Tankboss',
+                    class: 'Warrior',
+                    guild: 'Everlasting Vendetta',
+                    realmSlug: 'spineshatter',
+                },
+            },
+        ]);
+
+        const result = await (workflow as any).replaceNamesWithIds(
+            'Loot drama: @Guldanish blamed @Tankboss, then @Guldanish blamed @Unknown.'
+        );
+
+        expect(mocks.membersRepository.findDiscordIdsByCharacterNames).toHaveBeenCalledWith(
+            ['Guldanish', 'Tankboss', 'Unknown'],
+            'spineshatter'
+        );
+        expect(result).toBe('Loot drama: <@123456789> blamed <@987654321>, then <@123456789> blamed @Unknown.');
     });
 
     test('skips posting when digest generation fails', async () => {

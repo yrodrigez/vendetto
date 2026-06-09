@@ -1,7 +1,7 @@
 import { RaidParticipant, RaidReset } from "@/domain/raid/models";
 import { RaidResetRepository } from "@/domain/raid/raid-reset.repository";
 import { createServerComponentClient } from "@/supabase";
-import moment from "moment";
+import moment, { now } from "moment";
 
 export class SupabaseRaidResetRepository implements RaidResetRepository {
     async findResetParticipants(resetId: string): Promise<RaidParticipant[]> {
@@ -45,14 +45,14 @@ export class SupabaseRaidResetRepository implements RaidResetRepository {
             name: p.character_object.character.name,
         }));
     }
-    async getUpcomingRaids(): Promise<RaidReset[]> {
+    async getUpcomingRaids(start: string, end: string): Promise<RaidReset[]> {
         const supabase = createServerComponentClient();
-        const nowDate = moment().format('YYYY-MM-DD'); // Get the current date in format YYYY-MM-DD
+
         const { data: resets, error } = await supabase
             .from('raid_resets')
             .select('id, name, raid:ev_raid(name, id), raid_date, end_date, time, end_time, reservations_closed')
-            .gte('raid_date', nowDate)
-            .lt('raid_date', moment().add(7, 'days').format('YYYY-MM-DD')) // Next 7 days
+            .gt('raid_date', start)
+            .lt('raid_date', end)
             .overrideTypes<RaidReset[]>();
 
         if (error) {

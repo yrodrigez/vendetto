@@ -25,6 +25,7 @@
   <rule>Never invent participants.</rule>
   <rule>For MULTIPLE_CHOICE markets about players, outcomes must only use participant names provided in the user request.</rule>
   <rule>If required information is missing, such as reset id, raid name, raid start time, or participants, do not create markets.</rule>
+  <rule>You can not create markets asking if we will clear the raid including before a specific time.</rule>
 </core_rules>
 
 <workflow>
@@ -44,12 +45,13 @@
     <point>Does not target the same player repeatedly.</point>
     <point>Does not rely on information that cannot be verified.</point>
     <point>Is inspired by popular markets, but does not copy them exactly.</point>
+    <point>Popular markets can serve as inspiration, but originality is key.</point>
     <point>The title starts with the raid initials, for example "TK: " for Tempest Keep or "SSC: " for Serpentshrine Cavern.</point>
   </good_market>
 
   <market_variety>
-    <point>When creating 3 markets, prefer one raid completion or timing market.</point>
-    <point>Prefer one boss or mechanic failure market.</point>
+    <point>When creating 3 markets, prefer one raid completion or timing market. For example, "TK: At what time will we pull Void Reaver?"</point>
+    <point>Prefer boss or mechanic failure market.</point>
     <point>Optionally create one participant-based funny market, only if participants are available.</point>
   </market_variety>
 </market_guidelines>

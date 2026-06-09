@@ -1,4 +1,5 @@
 import { LootHistoryRepositoryPort, WeeklyLootEntry, WeeklyRaidReset } from "@/application/ports/outbound/database/loot-history-repository.port";
+import { MemberRepositoryPort } from "@/application/ports/outbound/database/member-repository.port";
 import { WorkflowRunRepositoryPort } from "@/application/ports/outbound/database/workflow-run-repository.port";
 import { WorkflowRepositoryPort } from "@/application/ports/outbound/database/workflow-scheduler-repository.port";
 import { DiscordTextChannelPort, DiscordTextMessage } from "@/application/ports/outbound/discord-text-channel.port";
@@ -14,6 +15,7 @@ const NEWS_CHANNEL_NAME = 'news';
 const VENDETTO_NEWS_CHANNEL_NAME = 'vendetto-news';
 const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const DISCORD_MESSAGE_LIMIT = 2000;
+const REALM_SLUG = 'spineshatter'; // TODO: make realm configurable
 
 @WorkflowName('Vendetto News')
 @Schedule('0 18 * * 2', { isRecurring: true }) // every Tuesday at 18:00
@@ -23,12 +25,12 @@ export class VendettoNewsWorkflow extends WorkflowWithSchedule<VendettoNewsInput
     private raidResets: WeeklyRaidReset[] = [];
     private lootHistory: WeeklyLootEntry[] = [];
     private newsMessages: DiscordTextMessage[] = [];
-    private digest: string | null = null;
 
     constructor(
         private readonly lootHistoryRepository: LootHistoryRepositoryPort,
         private readonly discordChannel: DiscordTextChannelPort,
         private readonly newsDigestGeneration: NewsDigestGenerationPort,
+        private readonly membersRepository: MemberRepositoryPort,
         workflowExecutionRepository: WorkflowRunRepositoryPort,
         workflowRepository: WorkflowRepositoryPort,
         context: string,
@@ -69,11 +71,10 @@ export class VendettoNewsWorkflow extends WorkflowWithSchedule<VendettoNewsInput
     async generateNewsDigest() {
         if (!this.hasWeeklyData()) {
             console.log('No weekly raid, loot, or news data found. Skipping Vendetto News digest.');
-            this.digest = null;
             return;
         }
 
-        this.digest = await this.newsDigestGeneration.generateDigest({
+        const message = await this.newsDigestGeneration.generateDigest({
             guildName: this.input.guildName,
             since: this.since,
             until: this.until,
@@ -82,15 +83,33 @@ export class VendettoNewsWorkflow extends WorkflowWithSchedule<VendettoNewsInput
             newsMessages: this.newsMessages,
         });
 
-        if (!this.digest) {
+        if (!message) {
             console.warn('Vendetto News digest generation returned no content. Skipping Discord message.');
         }
+
+        return message;
     }
 
-    @Step('publish-news-digest', 3)
+    @Step('replace-names-with-ids', 3)
     @Retryable()
-    async publishNewsDigest() {
-        if (!this.digest) return;
+    async replaceNamesWithIds(message: string | null) {
+        if (!message) return null;
+        const names = Array.from(new Set([...message.matchAll(/@(\w+)/g)].map(m => m[1])));
+        const members = await this.membersRepository.findDiscordIdsByCharacterNames(names, REALM_SLUG); // TODO: make realm configurable
+
+        for (const member of members) {
+            const mention = `@${member.character.name}`;
+            const discordMention = `<@${member.discordId}>`;
+            message = message.split(mention).join(discordMention);
+        }
+        
+        return message;
+    }
+
+    @Step('publish-news-digest', 4)
+    @Retryable()
+    async publishNewsDigest(message: string | null) {
+        if (!message) return;
 
         const targetChannelId = await this.discordChannel.findTextChannelByName(this.input.guildId, VENDETTO_NEWS_CHANNEL_NAME);
         if (!targetChannelId) {
@@ -98,15 +117,16 @@ export class VendettoNewsWorkflow extends WorkflowWithSchedule<VendettoNewsInput
             return;
         }
 
-        if (this.digest.length <= DISCORD_MESSAGE_LIMIT) {
-            await this.discordChannel.sendMessage(targetChannelId, this.toDiscordMessage(this.digest));
+        if (message.length <= DISCORD_MESSAGE_LIMIT) {
+            await this.discordChannel.sendMessage(targetChannelId, this.toDiscordMessage(message));
         } else {
             console.warn('Generated Vendetto News digest exceeds Discord message limit. Sending truncated version.');
-            for (let i = 0; i < this.digest.length; i += DISCORD_MESSAGE_LIMIT) {
-                const chunk = this.digest.slice(i, i + DISCORD_MESSAGE_LIMIT);
+            for (let i = 0; i < message.length; i += DISCORD_MESSAGE_LIMIT) {
+                const chunk = message.slice(i, i + DISCORD_MESSAGE_LIMIT);
                 await this.discordChannel.sendMessage(targetChannelId, this.toDiscordMessage(chunk));
             }
         }
+
     }
 
     private hasWeeklyData(): boolean {

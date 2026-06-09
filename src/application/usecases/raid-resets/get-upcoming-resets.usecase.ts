@@ -1,4 +1,5 @@
 import { RaidResetRepository } from "@/domain/raid/raid-reset.repository";
+import moment from "moment";
 
 export type GetUpcomingResetsUseCaseOutput = Array<{
     id: string;
@@ -24,7 +25,12 @@ export class GetUpcomingResetsUseCase {
     constructor(private raidResetRepository: RaidResetRepository) { }
 
     async execute(): Promise<GetUpcomingResetsUseCaseOutput> {
-        const resets = await this.raidResetRepository.getUpcomingRaids();
+        const from = moment().format('YYYY-MM-DD');
+        const to = moment().add(3, 'days').format('YYYY-MM-DD');
+        const resets = await this.raidResetRepository.getUpcomingRaids(from, to);
+        if (resets.length === 0) {
+            return [];
+        }
         const withParticipants = await Promise.all(resets.map(async (reset) => {
             const participants = await this.raidResetRepository.findResetParticipants(reset.id);
             return { ...reset, participants };

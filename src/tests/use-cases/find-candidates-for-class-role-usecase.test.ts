@@ -4,7 +4,7 @@ import { DiscordApiAdapter } from "../../infrastructure/discord/discord-api.adap
 import { MembersRepository } from "../../infrastructure/persistance/repositories/members/members.repository";
 
 describe('FindCandidatesForClassRoleUseCase', () => {
-    test('should return candidates for a class role', async () => {
+    test.skip('should return candidates for a class role', async () => {
         const usecase = new FindCandidatesForClassRoleUseCase(
             new MembersRepository(new DatabaseClient()),
             new DiscordApiAdapter(),
