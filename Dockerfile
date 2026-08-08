@@ -8,7 +8,12 @@ RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+      CFLAGS="-DOPUS_ARM_MAY_HAVE_NEON_INTR" pnpm install --frozen-lockfile; \
+    else \
+      pnpm install --frozen-lockfile; \
+    fi
 
 COPY . .
 RUN pnpm build
