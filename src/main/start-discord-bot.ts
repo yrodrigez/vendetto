@@ -1,3 +1,4 @@
+import { AnnounceCommand } from "@/application/commands/announce.command";
 import { InvitesStartedCommand } from "@/application/commands/invites-started.command";
 import { OffPushToTalkCommand } from "@/application/commands/off-push-to-talk.command";
 import { PingCommand } from "@/application/commands/ping.command";
@@ -101,6 +102,9 @@ export async function startCommands() {
 
     const pingCommand = new PingCommand();
     commandRegistry.register(pingCommand);
+
+    const announceCommand = new AnnounceCommand();
+    commandRegistry.register(announceCommand);
 
     const playCommand = new PlayCommand(discordPlayerAdapter);
     commandRegistry.register(playCommand);
