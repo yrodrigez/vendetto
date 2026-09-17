@@ -23,15 +23,15 @@ Make sure your config.json has:
 - `/ping` - Check if bot is online
 - `/guildinfo` - Display information about the guild
 - `/member [user]` - Get information about a guild member
-- `/announce [channel] [message]` - Create an announcement (Admin only)
+- `/announce [channel] [title] [message]` - Create an announcement (Admin only)
 
 Example:
 
 ```
-/announce channel:#news message:Raid tonight at 20:00 server time!
+/announce channel:#news title:Raid Tonight message:Raid tonight at 20:00 server time!
 ```
 
-The bot posts a styled "📣 Announcement" embed in the selected channel. Requires the `Administrator` or `ManageMessages` Discord permission.
+The bot posts a styled embed with your custom title in the selected channel. Requires the `Administrator` or `ManageMessages` Discord permission.
 
 ## Adding More Commands
 

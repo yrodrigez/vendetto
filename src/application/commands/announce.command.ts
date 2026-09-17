@@ -19,6 +19,11 @@ export class AnnounceCommand implements DiscordCommand {
                 .setRequired(true)
         )
         .addStringOption(option =>
+            option.setName('title')
+                .setDescription('The announcement title')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
             option.setName('message')
                 .setDescription('The announcement message')
                 .setRequired(true)
@@ -54,10 +59,11 @@ export class AnnounceCommand implements DiscordCommand {
         }
 
         const textChannel = channel as TextChannel;
+        const title = interaction.options.getString('title', true);
         const message = interaction.options.getString('message', true);
 
         const embed = new EmbedBuilder()
-            .setTitle('📣 Announcement')
+            .setTitle(title)
             .setDescription(message)
             .setColor(0x9B59B6)
             .setAuthor({

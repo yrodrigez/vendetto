@@ -18,7 +18,10 @@ function createMockInteraction(overrides: any = {}) {
                 type: ChannelType.GuildText,
                 send: jest.fn().mockResolvedValue(undefined),
             }),
-            getString: jest.fn().mockReturnValue(overrides.message ?? 'Hello world'),
+            getString: jest.fn((name: string) => {
+                if (name === 'title') return overrides.title ?? 'Default Title';
+                return overrides.message ?? 'Hello world';
+            }),
         },
         reply: jest.fn().mockResolvedValue(undefined),
     } as any;
@@ -69,7 +72,7 @@ describe('AnnounceCommand', () => {
         const command = new AnnounceCommand();
         const send = jest.fn().mockResolvedValue(undefined);
         const channel = { id: 'channel-1', type: ChannelType.GuildText, send };
-        const interaction = createMockInteraction({ channel, message: 'Server maintenance at 8pm' });
+        const interaction = createMockInteraction({ channel, title: 'Maintenance', message: 'Server maintenance at 8pm' });
 
         await command.execute(interaction);
 
@@ -77,7 +80,7 @@ describe('AnnounceCommand', () => {
             embeds: [
                 expect.objectContaining({
                     data: expect.objectContaining({
-                        title: '📣 Announcement',
+                        title: 'Maintenance',
                         description: 'Server maintenance at 8pm',
                     }),
                 }),
